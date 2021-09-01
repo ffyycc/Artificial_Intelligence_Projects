@@ -13,6 +13,7 @@ within this file -- the unrevised staff files will be used for all other
 files and classes when code is run, so be careful to not modify anything else.
 """
 from collections import deque
+import heapq
 
 # Search should return the path.
 # The path should be a list of tuples in the form (row, col) that correspond
@@ -81,6 +82,10 @@ def backtrack(start,end,dic):
     #print(path.reverse)
     return path
 
+def get_est_dist(start, end):
+    dist = abs(start[0]-end[0]) + abs(start[1]-end[1])
+    return dist
+
 def bfs(maze):
     """
     Runs BFS for part 1 of the assignment.
@@ -125,7 +130,47 @@ def astar_single(maze):
 
     @return path: a list of tuples containing the coordinates of each state in the computed path
     """
-    return []
+    start_axis = maze.start
+    start_cell = maze[maze.start]
+    end_axis = maze.waypoints
+    end_axis = end_axis[0]
+    end_cell = maze[end_axis]
+
+    to_return = []
+    visit = []
+    visit.append(start_axis)
+    q = []
+    est_dist = get_est_dist(start_axis,end_axis)
+    start_comb = (est_dist,start_axis,0)
+    heapq.heappush(q,start_comb)
+    parent = {}
+
+    #astar while loop
+    while(q):
+        temp = heapq.heappop(q)
+        cell = maze[temp[1]]
+
+        if (cell == maze.legend.waypoint):
+            to_return = backtrack(maze.start,temp[1],parent)
+            return to_return
+        
+        neibor = maze.neighbors(temp[1][0],temp[1][1])
+        for child in neibor:
+            if child not in visit:
+                # A* distance calculate
+                actual_dist = 1 + temp[2]
+                est_dist = get_est_dist(child,end_axis)
+                total = actual_dist + est_dist
+                comb = (total,child,actual_dist)
+
+                # visit append
+                visit.append(child)
+                # push q to prior q
+                heapq.heappush(q,comb)
+                # parent dictory append
+                parent[child] = temp[1]
+
+    return to_return
 
 def astar_corner(maze):
     """
@@ -134,7 +179,7 @@ def astar_corner(maze):
     @param maze: The maze to execute the search on.
 
     @return path: a list of tuples containing the coordinates of each state in the computed path
-        """
+    """
     return []
 
 def astar_multiple(maze):
