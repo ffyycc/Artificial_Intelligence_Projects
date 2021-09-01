@@ -14,6 +14,7 @@ files and classes when code is run, so be careful to not modify anything else.
 """
 from collections import deque
 import heapq
+import sys
 
 # Search should return the path.
 # The path should be a list of tuples in the form (row, col) that correspond
@@ -28,12 +29,13 @@ import heapq
 # TODO: hint, you probably want to cache the MST value for sets of objectives you've already computed...
 class MST:
     def __init__(self, objectives):
+        #length  = len(objectives)
+        #print(objectives.index(objectives[1]))
         self.elements = {key: None for key in objectives}
-
         # TODO: implement some distance between two objectives 
         # ... either compute the shortest path between them, or just use the manhattan distance between the objectives
         self.distances   = {
-                (i, j): DISTANCE(objectives[i], objectives[j])
+                (i,j) : get_est_dist(i,j)
                 for i, j in self.cross(objectives)
             }
         
@@ -85,6 +87,20 @@ def backtrack(start,end,dic):
 def get_est_dist(start, end):
     dist = abs(start[0]-end[0]) + abs(start[1]-end[1])
     return dist
+
+def find_near_cell(start_axis,waypoint_axis):
+    # compare the distance and get the nearest waypoint
+    dist = 2**32
+    near_cell = (0,0)
+    for i in range(len(waypoint_axis)):
+        temp = get_est_dist(start_axis,waypoint_axis[i])
+        if (dist > temp):
+            near_cell = waypoint_axis[i]
+            dist = temp
+
+    to_return = (near_cell,dist)
+    return to_return
+
 
 def bfs(maze):
     """
@@ -191,7 +207,60 @@ def astar_multiple(maze):
 
     @return path: a list of tuples containing the coordinates of each state in the computed path
     """
-    return []
+    start_axis = maze.start
+    start_cell = maze[maze.start]
+    waypoint_axis = maze.waypoints
+
+    est_MST = MST(waypoint_axis)
+    weight = MST.compute_mst_weight(est_MST)
+    
+    to_return = []
+    visit = []
+    visit.append(start_axis)
+    q = []
+
+    near_cell_info = find_near_cell(start_axis,waypoint_axis)
+    # print(near_cell_info)
+    # print("start is",start_axis,"waypoints are",waypoint_axis)
+    total_est = weight + near_cell_info[1]
+    start_comb = (total_est,start_axis,0)
+    heapq.heappush(q,start_comb)
+    parent = {}
+
+    # multiple astar while loop
+    while(q):
+        temp = heapq.heappop(q)
+        if (temp[1] in waypoint_axis):
+            # TODO: do sth after finding the first point
+            # change tuple to list, remove reached point, and change back to tuple
+            waypoint_list = list(waypoint_axis)
+            waypoint_list.remove(temp[1])
+            waypoint_axis = tuple(waypoint_list)
+
+            # if waypoints tuple are not empty, continue, else return
+            if (len(waypoint_axis) != 0):
+                # continue if not empty
+                print("change above!")
+            else:
+                to_return = backtrack(maze.start,temp[1],parent)
+                return to_return
+
+        neibor = maze.neighbors(temp[1][0],temp[1][1])
+        for child in neibor:
+            if child not in visit:
+                # A* distance calculate
+                actual_dist = 1 + temp[2]
+                est_dist = get_est_dist(child,near_cell_info[0])
+                total = actual_dist + est_dist + weight
+                comb = (total,child,actual_dist)
+
+                # visit append
+                visit.append(child)
+                # push q to prior q
+                heapq.heappush(q,comb)
+                #parent dictory append
+                parent[child] = temp[1]
+    return to_return
 
 def fast(maze):
     """
