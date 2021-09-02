@@ -240,9 +240,26 @@ def astar_multiple(maze):
             # if waypoints tuple are not empty, continue, else return
             if (len(waypoint_axis) != 0):
                 # continue if not empty
-                print("change above!")
+                # append path
+                to_return.extend(backtrack(start_axis,temp[1],parent))
+                # print(to_return)
+                # refresh the visit, parent, queue list
+                start_axis = temp[1]
+                parent = {}
+                q = []
+
+                visit = []
+                visit.append(temp[1])
+
+                near_cell_info = find_near_cell(temp[1],waypoint_axis)
+                est_MST = MST(waypoint_axis)
+                weight = MST.compute_mst_weight(est_MST)
+                total_est = weight + near_cell_info[1]
+                start_comb = (total_est,temp[1],0)
+                heapq.heappush(q,start_comb)
+
             else:
-                to_return = backtrack(maze.start,temp[1],parent)
+                to_return.extend(backtrack(start_axis,temp[1],parent))
                 return to_return
 
         neibor = maze.neighbors(temp[1][0],temp[1][1])
