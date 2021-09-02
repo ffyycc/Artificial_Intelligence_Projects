@@ -94,9 +94,18 @@ def find_near_cell(start_axis,waypoint_axis):
     near_cell = (0,0)
     for i in range(len(waypoint_axis)):
         temp = get_est_dist(start_axis,waypoint_axis[i])
-        if (dist > temp):
+
+        # change tuple to list, remove reached point, and change back to tuple
+        temp_list = list(waypoint_axis)
+        temp_list.remove(waypoint_axis[i])
+        temp_list = tuple(temp_list)
+        temp_MST  = MST(temp_list)
+        temp_weight = MST.compute_mst_weight(temp_MST)
+        temp_total = temp + temp_weight
+
+        if (dist > temp_total):
             near_cell = waypoint_axis[i]
-            dist = temp
+            dist = temp_total
 
     to_return = (near_cell,dist)
     return to_return
@@ -220,7 +229,7 @@ def astar_multiple(maze):
 
     # near_cell_info define as (axis,distance)
     near_cell_info = find_near_cell(start_axis,waypoint_axis)
-    # print(near_cell_info)
+    # print(waypoint_axis)
     # print("start is",start_axis,"waypoints are",waypoint_axis)
     total_est = weight + near_cell_info[1]
     start_comb = (total_est,start_axis,0)
@@ -261,7 +270,8 @@ def astar_multiple(maze):
 
             else:
                 to_return.extend(backtrack(start_axis,temp[1],parent))
-                print(to_return)
+                # print(to_return)
+                # print(maze.validate_path(to_return))
                 return to_return
 
         neibor = maze.neighbors(temp[1][0],temp[1][1])
