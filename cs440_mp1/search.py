@@ -208,7 +208,6 @@ def astar_multiple(maze):
     @return path: a list of tuples containing the coordinates of each state in the computed path
     """
     start_axis = maze.start
-    start_cell = maze[maze.start]
     waypoint_axis = maze.waypoints
 
     est_MST = MST(waypoint_axis)
@@ -219,6 +218,7 @@ def astar_multiple(maze):
     visit.append(start_axis)
     q = []
 
+    # near_cell_info define as (axis,distance)
     near_cell_info = find_near_cell(start_axis,waypoint_axis)
     # print(near_cell_info)
     # print("start is",start_axis,"waypoints are",waypoint_axis)
@@ -241,7 +241,8 @@ def astar_multiple(maze):
             if (len(waypoint_axis) != 0):
                 # continue if not empty
                 # append path
-                to_return.extend(backtrack(start_axis,temp[1],parent))
+                part_path = backtrack(start_axis,temp[1],parent)
+                to_return.extend(part_path[:-1])
                 # print(to_return)
                 # refresh the visit, parent, queue list
                 start_axis = temp[1]
@@ -260,6 +261,7 @@ def astar_multiple(maze):
 
             else:
                 to_return.extend(backtrack(start_axis,temp[1],parent))
+                print(to_return)
                 return to_return
 
         neibor = maze.neighbors(temp[1][0],temp[1][1])
@@ -267,6 +269,7 @@ def astar_multiple(maze):
             if child not in visit:
                 # A* distance calculate
                 actual_dist = 1 + temp[2]
+                near_cell_info = find_near_cell(child,waypoint_axis)
                 est_dist = get_est_dist(child,near_cell_info[0])
                 total = actual_dist + est_dist + weight
                 comb = (total,child,actual_dist)
