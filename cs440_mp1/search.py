@@ -122,6 +122,12 @@ def find_near_cell_fast(start_axis,waypoint_axis):
     to_return = (near_cell,dist)
     return to_return
 
+def child_in_done(done,child):
+    for i in range(len(done)):
+        if (child == done[i][1]):
+            return (True,done[i])
+    return (False,0)
+
 
 def bfs(maze):
     """
@@ -220,6 +226,7 @@ def astar_corner(maze):
     return []
 
 def astar_multiple(maze):
+
     """
     Runs A star for part 4 of the assignment in the case where there are
     multiple objectives.
@@ -283,7 +290,7 @@ def astar_multiple(maze):
             else:
                 to_return.extend(backtrack(start_axis,temp[1],parent))
                 # print(to_return)
-                print(maze.validate_path(to_return))
+                # print(maze.validate_path(to_return))
                 return to_return
 
         neibor = maze.neighbors(temp[1][0],temp[1][1])
