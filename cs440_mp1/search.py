@@ -110,6 +110,18 @@ def find_near_cell(start_axis,waypoint_axis):
     to_return = (near_cell,dist)
     return to_return
 
+def find_near_cell_fast(start_axis,waypoint_axis):
+    dist = 2**32
+    near_cell = (0,0)
+    for i in range(len(waypoint_axis)):
+        temp = get_est_dist(start_axis,waypoint_axis[i])
+        if (dist > temp):
+            near_cell = waypoint_axis[i]
+            dist = temp
+
+    to_return = (near_cell,dist)
+    return to_return
+
 
 def bfs(maze):
     """
@@ -271,7 +283,7 @@ def astar_multiple(maze):
             else:
                 to_return.extend(backtrack(start_axis,temp[1],parent))
                 # print(to_return)
-                # print(maze.validate_path(to_return))
+                print(maze.validate_path(to_return))
                 return to_return
 
         neibor = maze.neighbors(temp[1][0],temp[1][1])
@@ -300,6 +312,75 @@ def fast(maze):
 
     @return path: a list of tuples containing the coordinates of each state in the computed path
     """
-    return []
+    start_axis = maze.start
+    waypoint_axis = maze.waypoints
+
+    est_MST = MST(waypoint_axis)
+    weight = MST.compute_mst_weight(est_MST)
+    
+    to_return = []
+    visit = []
+    visit.append(start_axis)
+    q = []
+
+    # near_cell_info define as (axis,distance)
+    near_cell_info = find_near_cell(start_axis,waypoint_axis)
+    total_est = weight + near_cell_info[1]
+    start_comb = (total_est,start_axis,0)
+    heapq.heappush(q,start_comb)
+    parent = {}
+
+    # multiple astar while loop
+    while(q):
+        temp = heapq.heappop(q)
+        if (temp[1] in waypoint_axis):
+            # TODO: do sth after finding the first point
+            # change tuple to list, remove reached point, and change back to tuple
+            waypoint_list = list(waypoint_axis)
+            waypoint_list.remove(temp[1])
+            waypoint_axis = tuple(waypoint_list)
+
+            # if waypoints tuple are not empty, continue, else return
+            if (len(waypoint_axis) != 0):
+                # continue if not empty
+                # append path
+                part_path = backtrack(start_axis,temp[1],parent)
+                to_return.extend(part_path[:-1])
+                # refresh the visit, parent, queue list
+                start_axis = temp[1]
+                parent = {}
+                q = []
+
+                visit = []
+                visit.append(temp[1])
+
+                near_cell_info = find_near_cell_fast(temp[1],waypoint_axis)
+                est_MST = MST(waypoint_axis)
+                weight = MST.compute_mst_weight(est_MST)
+                total_est = weight + near_cell_info[1]
+                start_comb = (total_est,temp[1],0)
+                heapq.heappush(q,start_comb)
+
+            else:
+                to_return.extend(backtrack(start_axis,temp[1],parent))
+                return to_return
+
+        neibor = maze.neighbors(temp[1][0],temp[1][1])
+        for child in neibor:
+            if child not in visit:
+                # A* distance calculate
+                actual_dist = 1 + temp[2]
+                near_cell_info = find_near_cell_fast(child,waypoint_axis)
+                est_dist = get_est_dist(child,near_cell_info[0])
+                total = actual_dist + est_dist + weight
+                comb = (total,child,actual_dist)
+
+                # visit append
+                visit.append(child)
+                # push q to prior q
+                heapq.heappush(q,comb)
+                #parent dictory append
+                parent[child] = temp[1]
+    return to_return
     
             
