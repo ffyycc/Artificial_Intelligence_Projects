@@ -237,7 +237,7 @@ def astar_multiple(maze):
     """
     start_axis = maze.start
     waypoint_axis = maze.waypoints
-
+    # print(waypoint_axis)
     est_MST = MST(waypoint_axis)
     weight = MST.compute_mst_weight(est_MST)
     
@@ -249,19 +249,19 @@ def astar_multiple(maze):
     # near_cell_info define as (axis,distance)
     near_cell_info = find_near_cell(start_axis,waypoint_axis)
     total_est = weight + near_cell_info[1]
-    start_comb = (total_est,start_axis,0)
-    heapq.heappush(q,start_comb)
     parent = {}
+    start_comb = (total_est,start_axis,0,waypoint_axis,parent)
+    heapq.heappush(q,start_comb)
 
     # edit
     done = []
+    done.append(start_comb)
 
     # multiple astar while loop
     while(q):
         temp = heapq.heappop(q)
-        done.append(temp)
+        # print(temp)
         if (temp[1] in waypoint_axis):
-            # TODO: do sth after finding the first point
             # change tuple to list, remove reached point, and change back to tuple
             waypoint_list = list(waypoint_axis)
             waypoint_list.remove(temp[1])
@@ -271,6 +271,7 @@ def astar_multiple(maze):
             if (len(waypoint_axis) != 0):
                 # continue if not empty
                 # append path
+                parent = temp[4]
                 part_path = backtrack(start_axis,temp[1],parent)
                 to_return.extend(part_path[:-1])
 
@@ -288,10 +289,11 @@ def astar_multiple(maze):
                 est_MST = MST(waypoint_axis)
                 weight = MST.compute_mst_weight(est_MST)
                 total_est = weight + near_cell_info[1]
-                start_comb = (total_est,temp[1],0)
+                start_comb = (total_est,temp[1],0,waypoint_axis,parent)
                 heapq.heappush(q,start_comb)
 
             else:
+                parent = temp[4]
                 to_return.extend(backtrack(start_axis,temp[1],parent))
                 # print(done)
                 # print(maze.validate_path(to_return))
@@ -305,14 +307,18 @@ def astar_multiple(maze):
                 near_cell_info = find_near_cell(child,waypoint_axis)
                 est_dist = get_est_dist(child,near_cell_info[0])
                 total = actual_dist + est_dist + weight
-                comb = (total,child,actual_dist)
 
+                parent = temp[4]
+                #parent dictory append
+                parent[child] = temp[1]
+                comb = (total,child,actual_dist,temp[3],parent)
+
+                # done list append
+                done.append(comb)
                 # visit append
                 visit.append(child)
                 # push q to prior q
                 heapq.heappush(q,comb)
-                #parent dictory append
-                parent[child] = temp[1]
 
             else:
                 state = child_in_done(done,child)
@@ -321,19 +327,20 @@ def astar_multiple(maze):
                     near_cell_info = find_near_cell(child,waypoint_axis)
                     est_dist = get_est_dist(child,near_cell_info[0])
                     total = actual_dist + est_dist + weight
+                    # new distance less than the original one
                     if (total < state[1][0]):
                         # print("total is ",total,child, "old is ", state[1][0])
-
                         # update done estimate distance
                         for i in range(len(done)):
                             if (child == done[i][1]):
                                 done.remove(done[i])
                                 break
                         
-                        comb = (total,child,actual_dist)
+                        parent = temp[4]
+                        parent[child] = temp[1]
+                        comb = (total,child,actual_dist,temp[3],parent)
                         done.append(comb)
                         heapq.heappush(q,comb)
-                        parent[child] = temp[1]
     return to_return
 
 def fast(maze):
