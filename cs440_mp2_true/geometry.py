@@ -80,15 +80,13 @@ def circle_touch(center,width,walls,away_dist):
             # tangent point in the line
             if (tangent_dist <= (width+away_dist)):
                 return True
-            else:
-                return False
+
         else:
             # tangent point out the line
             temp = min(p1_to_center,p2_to_center)
             if (temp <= (width+away_dist)):
                 return True
-            else:
-                return False
+    return False
 
 def horizontal_touch(alien,walls,away_dist):
     width = alien.get_width()
@@ -100,10 +98,10 @@ def horizontal_touch(alien,walls,away_dist):
     else:
         head  = head_tail[0]            
         tail = head_tail[1]
-    p1 = (head[0]+width,head[1]-width-away_dist)
-    p2 = (tail[0]-width,tail[1]-width-away_dist)
-    p3 = (head[0]+width,head[1]+width+away_dist)
-    p4 = (tail[0]-width,tail[1]+width+away_dist)
+    p1 = (head[0],head[1]-width-away_dist)
+    p2 = (tail[0],tail[1]-width-away_dist)
+    p3 = (head[0],head[1]+width+away_dist)
+    p4 = (tail[0],tail[1]+width+away_dist)
     # print(p1,p2,p3,p4,alien.get_width(),head,tail)
     # print(intersect(p1,p2,(16,114.5),(55,110)))
 
@@ -115,8 +113,8 @@ def horizontal_touch(alien,walls,away_dist):
         if (intersect(p3,p4,wall_start,wall_end)):
             return True
 
-    left_center = (head[0]+width,head[1])
-    right_center = (tail[0]-width,tail[1])
+    left_center = (head[0],head[1])
+    right_center = (tail[0],tail[1])
     if ((circle_touch(left_center,width,walls,away_dist)) | (circle_touch(right_center,width,walls,away_dist))):
         return True
     return False
@@ -125,16 +123,16 @@ def vertical_touch(alien,walls,away_dist):
     width = alien.get_width()
     #  p1-top_left p2-top_right p3-bot_left p4-bot_right
     head_tail = alien.get_head_and_tail()
-    if (head_tail[0][0] >= head_tail[1][0]):
+    if (head_tail[0][1] >= head_tail[1][1]):
         head  = head_tail[1]            
         tail = head_tail[0]
     else:
         head  = head_tail[0]            
         tail = head_tail[1]
-    p1 = (head[0]-width-away_dist,head[1]+width)
-    p2 = (head[0]+width+away_dist,head[1]+width)
-    p3 = (tail[0]-width-away_dist,tail[1]-width)
-    p4 = (tail[0]+width+away_dist,tail[1]-width)
+    p1 = (head[0]-width-away_dist,head[1])
+    p2 = (head[0]+width+away_dist,head[1])
+    p3 = (tail[0]-width-away_dist,tail[1])
+    p4 = (tail[0]+width+away_dist,tail[1])
     # print(p1,p2,p3,p4,alien.get_width(),head,tail)
     # print(intersect(p1,p2,(16,114.5),(55,110)))
 
@@ -146,9 +144,11 @@ def vertical_touch(alien,walls,away_dist):
         if (intersect(p2,p4,wall_start,wall_end)):
             return True
 
-    left_center = (head[0],head[1]+width)
-    right_center = (head[0],tail[1]-width)
-    if ((circle_touch(left_center,width,walls,away_dist)) | (circle_touch(right_center,width,walls,away_dist))):
+    top_center = (head[0],head[1])
+    bot_center = (tail[0],tail[1])
+    # print(circle_touch(top_center,width,walls,away_dist))
+    # print(top_center,bot_center,width,walls,away_dist)
+    if ((circle_touch(top_center,width,walls,away_dist)) | (circle_touch(bot_center,width,walls,away_dist))):
         return True
     return False
 
@@ -200,7 +200,48 @@ def does_alien_touch_goal(alien, goals):
         Return:
             True if a goal is touched, False if not.
     """
+    center = alien.get_centroid()
+    if (alien.is_circle()):
+        # top, bot, left, right
+        for goal in goals:
+            goal_axis = (goal[0],goal[1])
+            radius  = goal[2]
+            distance  = dist_two_point(goal_axis,center)
+            if (distance <= (radius + alien.get_width())):
+                return True
+        return False
+
+    width = alien.get_width()
+    head_tail = alien.get_head_and_tail()   
+    head = head_tail[0]
+    tail = head_tail[1]
+    for goal in goals:
+        goal_axis = (goal[0],goal[1])
+        radius = goal[2]
+        d_head = dist_two_point(goal_axis,head)
+        d_tail = dist_two_point(goal_axis,tail)
+
+        if (d_head <= (radius + alien.get_width())):
+            return True
+        if (d_tail <= (radius + alien.get_width())):
+            return True
+
+        # assume top and bot segments are walls
+        walls = []
+        # horizontal
+        if (get_shape(alien) == 0):
+            walls = [(head[0], head[1]-width,tail[0],tail[1]-width),
+                     (head[0], head[1]+width,tail[0],tail[1]+width)]
+
+        # vertical
+        if (get_shape(alien) == 2):
+            walls = [(head[0]-width,head[1],tail[0]-width,tail[1]),
+                     (head[0]+width,head[1],tail[0]+width,tail[1])]
+
+        if (circle_touch(goal_axis,radius,walls,0)):
+            return True
     return False
+
 
 def is_alien_within_window(alien, window,granularity):
     """Determine whether the alien stays within the window
@@ -214,7 +255,7 @@ def is_alien_within_window(alien, window,granularity):
     hori_length = window[0]
     verti_length = window[1]
     windows = [(0,0,0,verti_length),(0,0,hori_length,0),(hori_length,0,hori_length,verti_length),(0,verti_length,hori_length,verti_length)]
-    breakpoint()
+    # breakpoint()
     if (alien.is_circle()):
         # top, bot, left, right
         if (circle_touch(alien.get_centroid(),alien.get_width(),windows,away_dist)):

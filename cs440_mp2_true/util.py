@@ -35,7 +35,7 @@ def noAlienidxToConfig(index,granularity,shape_dict):
     return tuple(result)
 
 def isValueInBetween(valueRange, target):
-    if target < min(valueRange) or target > max(valueRange):
+    if target <= min(valueRange) or target >= max(valueRange):
         return False
     else:
         return True

@@ -21,6 +21,12 @@ from itertools import chain
 class MazeError(Exception):
     pass
 
+class NoStartError(Exception):
+    pass
+
+class NoObjectiveError(Exception):
+    pass
+
 class Maze:
     def __init__(self, input_map, alien, granularity=DEFAULT_GRANULARITY, offsets=[0, 0, 0], filepath=None):
         """Initialize the Maze class
@@ -55,12 +61,11 @@ class Maze:
                         self.__objective.append(idxToConfig((x, y,shape), self.offsets, granularity,self.__alien))
 
         if not self.__start:
-            print("Maze has no start")            
-            raise SystemExit
+            # raise SystemExit
+            raise NoStartError("Maze has no start")
 
         if not self.__objective:
-            print("Maze has no objectives")
-            raise SystemExit
+            raise NoObjectiveError("Maze has no objectives")
     
     def __getitem__(self, index):
         """Access data at index via self[index] instead of using self.__map"""

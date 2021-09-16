@@ -23,7 +23,7 @@ from transform import transformToMaze
 from search import search
 from const import *
 from util import *
-from geometry import *
+from geometry_sol import *
 import time
 
 class Application:
