@@ -15,6 +15,7 @@ files and classes when code is run, so be careful to not modify anything else.
 from collections import deque
 import heapq
 import sys
+import pdb
 
 # Search should return the path.
 # The path should be a list of tuples in the form (row, col) that correspond
@@ -256,7 +257,7 @@ def astar_multiple(maze):
     # edit
     done = []
     done.append(start_comb)
-
+    
     # multiple astar while loop
     while(q):
         temp = heapq.heappop(q)
