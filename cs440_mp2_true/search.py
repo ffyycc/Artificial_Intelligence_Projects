@@ -65,7 +65,9 @@ def bfs(maze, ispart1=False):
         #print(temp)
         if (temp in goals):
             to_return = backtrack(start_axis,temp,parent_dict)
-            print(to_return)
+            # print(to_return)
+            if (len(to_return) == 0):
+                return None
             return to_return
 
         neibor = maze.getNeighbors(temp[0],temp[1],temp[2],ispart1)
@@ -76,4 +78,5 @@ def bfs(maze, ispart1=False):
                 visit.append(child)
                 q.append(child)
                 parent_dict[child] = temp
-    return to_return
+    
+    return None

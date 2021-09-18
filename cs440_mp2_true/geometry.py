@@ -70,8 +70,8 @@ def circle_touch(center,width,walls,away_dist):
         p1_to_center = dist_two_point(center,p1)
         p2_to_center = dist_two_point(center,p2)
         
-        p1_part = np.sqrt(p1_to_center**2-tangent_dist**2)
-        p2_part = np.sqrt(p2_to_center**2-tangent_dist**2)
+        p1_part = np.sqrt(abs(p1_to_center**2-tangent_dist**2)) #修改，不确定
+        p2_part = np.sqrt(abs(p2_to_center**2-tangent_dist**2))
 
         # print(p1_part,p2_part)
         wall_length  = dist_two_point(p1,p2)

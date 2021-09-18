@@ -20,6 +20,12 @@ from geometry import *
 from const import *
 from util import *
 import os
+import traceback
+import pdb
+
+def start_maze(x,y,z):
+    to_return = [[[SPACE_CHAR for k in range(z)] for j in range(y)] for i in range(x)]
+    return to_return
 
 def transformToMaze(alien, goals, walls, window,granularity):
     """This function transforms the given 2D map to the maze in MP1.
@@ -34,7 +40,60 @@ def transformToMaze(alien, goals, walls, window,granularity):
             Maze: the maze instance generated based on input arguments.
 
     """
-    pass
+    offset = [0, 0, 0]
+    columns = int(window[0]/granularity + 1)
+    rows = int(window[1]/granularity + 1)
+    maze = start_maze(columns,rows,3)
+    print(columns,rows,window[0],window[1])
+    # print(len("%%%%%%%%%%%%%%%%%%"))
+
+    center = alien.get_centroid()
+    shape = get_shape(alien)
+    if (shape == 0):
+        start = configToIdx([center[0],center[1],'Horizontal'], offset,granularity,alien)
+    elif (shape == 1):
+        start = configToIdx([center[0],center[1],'Ball'], offset,granularity,alien)
+    else:
+        start = configToIdx([center[0],center[1],'Vertical'], offset,granularity,alien)
+
+    for i in range(columns):
+        for j in range(rows):
+            for k in range(3):
+                # if (i == 18 and j ==6 and k == 0):
+                #     breakpoint()
+                    # print(does_alien_touch_wall(alien,walls,granularity))
+                if (k == 0):
+                    alien.set_alien_shape('Horizontal')
+                elif (k == 1):
+                    alien.set_alien_shape('Ball')
+                elif (k == 2):
+                    alien.set_alien_shape('Vertical')
+
+                config = idxToConfig((i,j,k),[0,0,0],granularity,alien)
+                alien.set_alien_pos((config[0],config[1]))
+
+                # if (i == 18 | j ==6 | k == 0):
+                #     print(does_alien_touch_wall(alien,walls,granularity))
+
+                if (is_alien_within_window(alien,window,granularity) == False):
+                    # alien touches the window with the setting position
+                    maze[i][j][k] = WALL_CHAR
+
+                elif (does_alien_touch_wall(alien,walls,granularity)):
+                    # alien touches the wall with the setting position
+                    maze[i][j][k] = WALL_CHAR
+
+                elif (does_alien_touch_goal(alien,goals) == True):
+                    # alien touches the goal with the setting position
+                    maze[i][j][k] = OBJECTIVE_CHAR
+
+
+    # col,row,shape start check
+    print(start)
+    maze[start[0]][start[1]][start[2]] = START_CHAR
+
+    to_return = Maze(maze,alien,granularity,[0,0,0],None)
+    return to_return
 
 if __name__ == '__main__':
     import configparser
