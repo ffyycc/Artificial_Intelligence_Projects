@@ -46,6 +46,7 @@ def count_words(data_set,data_label):
     negative_dic = {}
     length = len(data_label)
     total_words = 0
+    V = 0
 
     for i in range(length):
         sentence = data_set[i]
@@ -53,6 +54,7 @@ def count_words(data_set,data_label):
             for word in sentence: 
                 if word not in positive_dic:
                     positive_dic[word] = 1
+                    V += 1
                 else:
                     positive_dic[word] += 1
                 total_words += 1
@@ -60,15 +62,15 @@ def count_words(data_set,data_label):
             for word in sentence:
                 if word not in negative_dic:
                    negative_dic[word] = 1
+                   V += 1
                 else:
                     negative_dic[word] += 1
                 total_words += 1
-    return (positive_dic, negative_dic,total_words)
+    return (positive_dic, negative_dic,total_words,V)
 
 # n-number of words    countw-number of times w appear  apha-laplace  V-number of word TYPE
-def cal_laplace(n,alpha,dic):
+def cal_laplace(n,alpha,dic,V):
     prob_dic = dic
-    V  = len(dic)
 
     for word in dic:
         countw = dic[word]
@@ -82,6 +84,9 @@ def cal_laplace(n,alpha,dic):
 def estimate(dic_posi,dic_nega,dev_set,pos_prior):
     dev_label = []
     for sentence in dev_set:
+        # print(sentence)
+        # if (sentence == ["yucheng"]):
+        #     breakpoint()
         p_posi = math.log(pos_prior)
         p_nega = math.log(1-pos_prior)
         for word in sentence:
@@ -99,9 +104,9 @@ def estimate(dic_posi,dic_nega,dev_set,pos_prior):
 
             if (word not in dic_posi):
                 temp = dic_nega['UNK']
-                p_nega += dic_nega['UNK']
+                p_nega += math.log(temp)
         
-        if (p_posi >= p_nega):
+        if (math.exp(p_posi) >= math.exp(p_nega)):
             dev_label.append(1)
         else:
             dev_label.append(0)
@@ -113,24 +118,26 @@ You can modify the default values for the Laplace smoothing parameter and the pr
 Notice that we may pass in specific values for these parameters during our testing.
 """
 
-def naiveBayes(train_set, train_labels, dev_set, laplace=1.0, pos_prior=0.5,silently=True):
+def naiveBayes(train_set, train_labels, dev_set, laplace=0.5, pos_prior=0.95,silently=False):
     # Keep this in the provided template
+    yhats = []
+    for doc in tqdm(dev_set,disable=silently):
+        yhats.append(-1)
+
     print_paramter_vals(laplace,pos_prior)
    
     positive_dic = count_words(train_set,train_labels)[0]
     negative_dic = count_words(train_set,train_labels)[1]
     total_words = count_words(train_set,train_labels)[2]
+    V = count_words(train_set,train_labels)[3]
 
-    prob_posi = cal_laplace(total_words,laplace,positive_dic)
-    prob_nega = cal_laplace(total_words,laplace,negative_dic)
-    # print(prob_nega)
+    prob_posi = cal_laplace(total_words,laplace,positive_dic,V)
+    prob_nega = cal_laplace(total_words,laplace,negative_dic,V)
+    # print(yhats)
     
-    yhats = estimate(prob_posi,prob_nega,dev_set,pos_prior)
+    to_return  = estimate(prob_posi,prob_nega,dev_set,pos_prior)
     
-    # yhats = []
-    # for doc in tqdm(dev_set,disable=silently):
-    #     yhats.append(-1)
-    return yhats
+    return to_return
 
 
 # Keep this in the provided template
