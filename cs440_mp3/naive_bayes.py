@@ -11,6 +11,7 @@ import math
 from tqdm import tqdm
 from collections import Counter
 import reader
+import pdb
 
 
 """
@@ -40,23 +41,95 @@ def print_paramter_vals(laplace,pos_prior):
     print(f"Positive prior {pos_prior}")
 
 
+def count_words(data_set,data_label):
+    positive_dic = {}
+    negative_dic = {}
+    length = len(data_label)
+    total_words = 0
+
+    for i in range(length):
+        sentence = data_set[i]
+        if (data_label[i] == 1):     # positive comment
+            for word in sentence: 
+                if word not in positive_dic:
+                    positive_dic[word] = 1
+                else:
+                    positive_dic[word] += 1
+                total_words += 1
+        else:                       # negative comment
+            for word in sentence:
+                if word not in negative_dic:
+                   negative_dic[word] = 1
+                else:
+                    negative_dic[word] += 1
+                total_words += 1
+    return (positive_dic, negative_dic,total_words)
+
+# n-number of words    countw-number of times w appear  apha-laplace  V-number of word TYPE
+def cal_laplace(n,alpha,dic):
+    prob_dic = dic
+    V  = len(dic)
+
+    for word in dic:
+        countw = dic[word]
+        temp = (countw+alpha)/(n+alpha*(V+1))
+        prob_dic[word] = temp 
+
+    temp = alpha/(n+alpha*(V+1))
+    prob_dic['UNK'] = temp
+    return prob_dic
+
+def estimate(dic_posi,dic_nega,dev_set,pos_prior):
+    dev_label = []
+    for sentence in dev_set:
+        p_posi = math.log(pos_prior)
+        p_nega = math.log(1-pos_prior)
+        for word in sentence:
+            if (word in dic_posi):
+                temp = dic_posi[word]
+                p_posi += math.log(temp)
+
+            if (word not in dic_posi):
+                temp = dic_posi['UNK']
+                p_posi += math.log(temp)
+
+            if (word in dic_nega):
+                temp = dic_nega[word]
+                p_nega += math.log(temp)
+
+            if (word not in dic_posi):
+                temp = dic_nega['UNK']
+                p_nega += dic_nega['UNK']
+        
+        if (p_posi >= p_nega):
+            dev_label.append(1)
+        else:
+            dev_label.append(0)
+
+    return dev_label
+           
 """
 You can modify the default values for the Laplace smoothing parameter and the prior for the positive label.
 Notice that we may pass in specific values for these parameters during our testing.
 """
 
-def naiveBayes(train_set, train_labels, dev_set, laplace=1.0, pos_prior=0.5,silently=False):
+def naiveBayes(train_set, train_labels, dev_set, laplace=1.0, pos_prior=0.5,silently=True):
     # Keep this in the provided template
     print_paramter_vals(laplace,pos_prior)
+   
+    positive_dic = count_words(train_set,train_labels)[0]
+    negative_dic = count_words(train_set,train_labels)[1]
+    total_words = count_words(train_set,train_labels)[2]
 
-    # train_data, train_label,dev_data,dev_label = load_data(train_set[0],dev_set[0],True,True,True)
-    # print(train_label)
-    # print(train_set[0])
+    prob_posi = cal_laplace(total_words,laplace,positive_dic)
+    prob_nega = cal_laplace(total_words,laplace,negative_dic)
+    # print(prob_nega)
     
+    yhats = estimate(prob_posi,prob_nega,dev_set,pos_prior)
     
-    yhats = []
-    for doc in tqdm(dev_set,disable=silently):
-        yhats.append(-1)
+    # yhats = []
+    # for doc in tqdm(dev_set,disable=silently):
+    #     yhats.append(-1)
     return yhats
 
 
@@ -73,7 +146,7 @@ def bigramBayes(train_set, train_labels, dev_set, unigram_laplace=1.0, bigram_la
 
     # Keep this in the provided template
     print_paramter_vals_bigram(unigram_laplace,bigram_laplace,bigram_lambda,pos_prior)
-
+    
     yhats = []
     for doc in tqdm(dev_set,disable=silently):
         yhats.append(-1)
