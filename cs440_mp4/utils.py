@@ -75,7 +75,7 @@ def specialword_accuracies(train_sentences, predicted_sentences, tag_sentences):
 
     return multitag_accuracy, unseen_accuracy
 
-
+        
 def topk_wordtagcounter(wordtagcounter, k):
     top_items = sorted(wordtagcounter.items(), key=lambda item: sum(item[1].values()), reverse=True)[:k]
     top_items = list(map(lambda item: (item[0], dict(item[1])), top_items))

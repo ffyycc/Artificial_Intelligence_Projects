@@ -47,21 +47,6 @@ def count_words(data_set,data_label):
     positive_dic = {}
     negative_dic = {}
     length = len(data_label)
-    # total_words = 0
-    # V = 0
-    stopwords = {'ourselves', 'hers', 'between', 'yourself', 'but', 'again', 'there', 'about', 'once', 'during', 'out', 
-    'very', 'having', 'with', 'they', 'own', 'an', 'be', 'some', 
-    'for', 'do', 'its', 'yours', 'such', 'into', 'of', 'most', 'itself', 
-    'other', 'off', 'is', 's', 'am', 'or', 'who', 'as', 'from', 'him', 'each', 
-    'the', 'themselves', 'until', 'below', 'are', 'we', 'these', 'your', 'his', 
-    'through', 'don', 'nor', 'me', 'were', 'her', 'more', 'himself', 'this', 'down', 
-    'should', 'our', 'their', 'while', 'above', 'both', 'up', 'to', 'ours', 'had', 'she', 
-    'all', 'no', 'when', 'at', 'any', 'before', 'them', 'same', 'and', 'been', 'have', 
-    'in', 'will', 'on', 'does', 'yourselves', 'then', 'that', 'because', 'what', 'over', 
-    'why', 'so', 'can', 'did', 'not', 'now', 'under', 'he', 'you', 'herself', 'has', 
-    'just', 'where', 'too', 'only', 'myself', 'which', 'those', 'i', 'after', 'few', 
-    'whom', 't', 'being', 'if', 'theirs', 'my', 'against', 'a', 'by', 'doing', 'it', 
-    'how', 'further', 'was', 'here', 'than','I','imdb'}
 
     for i in range(length):
         sentence = data_set[i]
@@ -95,10 +80,6 @@ def cal_laplace(alpha,dic,n,V):
 
     prob_dic['UNK'] = alpha/(n+alpha*(V+1))
 
-    # add = 0
-    # for word in dic:
-    #     add += prob_dic[word]
-    # print(add)
     return prob_dic
 
 def estimate(dic_posi,dic_nega,dev_set,pos_prior):
@@ -106,9 +87,6 @@ def estimate(dic_posi,dic_nega,dev_set,pos_prior):
     posi_unk = math.log(dic_posi['UNK'])
     nega_unk = math.log(dic_nega['UNK'])
     for sentence in dev_set:
-        # print(sentence)
-        # if (sentence == ['best', 'best', 'worst', 'worst']):
-        #     breakpoint()
         p_posi = math.log(pos_prior)
         p_nega = math.log(1-pos_prior)
         for word in sentence:
@@ -126,8 +104,6 @@ def estimate(dic_posi,dic_nega,dev_set,pos_prior):
             if (word not in dic_nega):
                 p_nega += nega_unk
         
-        # print(math.exp(p_posi))
-        # print(math.exp(p_nega))
         if (p_posi >= p_nega):
             dev_label.append(1)
         else:
@@ -163,7 +139,6 @@ def naiveBayes(train_set, train_labels, dev_set, laplace=0.005, pos_prior=0.76,s
 
     prob_posi = cal_laplace(laplace,positive_dic,pos_n_v[0],pos_n_v[1])
     prob_nega = cal_laplace(laplace,negative_dic,neg_n_v[0],neg_n_v[1])
-    # print(pos_n_v,neg_n_v)
     
     to_return  = estimate(prob_posi,prob_nega,dev_set,pos_prior)
     return to_return
