@@ -82,7 +82,7 @@ def find_max_key(dic):
             k = key
     return k
 
-def cal_viterbi(sentence,findparent,map,tag_list,list_prob_tag_pair,list_prob_tag_word):
+def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
     # setup
     for key,value in map[0].items():
         if (key == 'START'):
@@ -149,14 +149,14 @@ def viterbi_1(train, test):
 
     laplace = 0.005
     list_prob_tag_pair = cal_laplace_tag_pair(laplace,tag_pair_list)
-    # print(prob_tag_pair)
+    # print(list_prob_tag_pair)
     list_prob_tag_word = cal_laplace_tag_pair(laplace,tag_word_list)
     # print(list_prob_tag_word)
     output = []
     for sentence in test:
         map = get_trellis_map(tag_list,sentence)
         findparent = {}
-        tag_find = cal_viterbi(sentence,findparent,map,tag_list,list_prob_tag_pair,list_prob_tag_word)
+        tag_find = cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word)
 
         for i in range(len(sentence)):
             tag_find[i] = (sentence[i],tag_find[i][1])
