@@ -3,6 +3,7 @@ Part 2: This is the simplest version of viterbi that doesn't do anything special
 but it should do better than the baseline at words with multiple tags (because now you're using context
 to predict the tag).
 """
+from math import inf
 import math
 import pdb
 def backtrack(start,end,dic):
@@ -16,10 +17,13 @@ def backtrack(start,end,dic):
     #print(path.reverse)
     return path
 
-def count_tag(train,tag_list,tag_word_list):
+def count_tag_word(train,tag_list,tag_word_list):
+    word_list = []
     for sentence in train:
         for pair in sentence:
             word = pair[0]
+            if word not in word_list:
+                word_list.append(word)
             tag = pair[1]
             tag_word = (tag,word)
             if (tag not in tag_list):
@@ -30,7 +34,7 @@ def count_tag(train,tag_list,tag_word_list):
                 tag_word_list[tag_word] = 1
             else:
                 tag_word_list[tag_word] += 1
-    return tag_list,tag_word_list
+    return tag_list,tag_word_list,word_list
 
 def count_pair_list(train,tag_pair_list):
     for sentence in train:
@@ -46,20 +50,40 @@ def cal_total(table):
     return sum(table.values())
 
 # alpha-laplace     dic - list    n-number of words   V-number of word TYPE
-def cal_laplace_tag_pair(alpha,dic):
-    n = 0
+def cal_laplace_transition(alpha,dic,tag_list):
     V = 0
     prob_table = {}
-    for tag_pair in dic:
-        n += dic[tag_pair]
-        V += 1
+    V = len(tag_list)
+    
+    total_n = 0
+    for time0 in tag_list:
+        total_n += tag_list[time0]
+        n = 0
+        # ex: n = (START, NOUN) + (START,VERB)
+        for time1 in tag_list:
+            if (time0,time1) in dic:
+                n += dic[time0,time1]
         
-    for tag_pair in dic:
-        countw = dic[tag_pair]
-        prob_table[tag_pair] = math.log((countw+alpha)/(n+alpha*(V+1)))
+        for tag_pair in dic:
+            countw = dic[tag_pair]
+            prob_table[tag_pair] = math.log((countw+alpha)/(n+alpha*(V+1)))
+        # print(n)
+    # print(total_n,V)
+    prob_table['UNK'] = math.log(alpha/(total_n+alpha*(V+1)))
+    return prob_table
 
-    prob_table['UNK'] = math.log(alpha/(n+alpha*(V+1)))
-    # print(cal_total(prob_table))
+def cal_laplace_emission(alpha,tag_word_list,tag_list,word_type):
+    prob_table = {}
+    V = word_type
+    n_total = 0
+    for tag_word in tag_word_list:
+        tag = tag_word[0]
+        n = tag_list[tag]
+        countw = tag_word_list[tag_word]
+        n_total += countw
+        prob_table[tag_word] = math.log((countw+alpha)/(n+alpha*(V+1)))
+    # print(n_total)
+    prob_table['UNK'] = math.log(alpha/(n_total+alpha*(V+1)))
     return prob_table
 
 def get_trellis_map(tags,sentence):
@@ -88,7 +112,7 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
         if (key == 'START'):
             map[0]['START'] = list_prob_tag_word[('START', 'START')]
         else:
-            map[0][key] = -11111
+            map[0][key] = -inf
     
     length = len(map)
 
@@ -100,7 +124,7 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
         # emission
         for key,value in map[time].items():
             max = -2**16
-            max_key = None
+            max_key0 = None
             if ((key,sentence[time]) in list_prob_tag_word):
                 p_e = list_prob_tag_word[(key,sentence[time])]
             else:
@@ -144,15 +168,17 @@ def viterbi_1(train, test):
     tag_list = {}
     tag_pair_list = {}
     tag_word_list = {}
-    tag_list,tag_word_list = count_tag(train,tag_list,tag_word_list)
+    tag_list,tag_word_list,word_list = count_tag_word(train,tag_list,tag_word_list)
     tag_pair_list = count_pair_list(train,tag_pair_list)
-
-    laplace = 0.005
-    list_prob_tag_pair = cal_laplace_tag_pair(laplace,tag_pair_list)
+    # print(tag_pair_list)
+    # print(tag_word_list)
+    laplace = 1/(2**14)
+    list_prob_tag_pair = cal_laplace_transition(laplace,tag_pair_list,tag_list)
     # print(list_prob_tag_pair)
-    list_prob_tag_word = cal_laplace_tag_pair(laplace,tag_word_list)
+    list_prob_tag_word = cal_laplace_emission(laplace,tag_word_list,tag_list,len(word_list))
     # print(list_prob_tag_word)
     output = []
+
     for sentence in test:
         map = get_trellis_map(tag_list,sentence)
         findparent = {}
