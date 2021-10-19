@@ -155,15 +155,15 @@ def main():
     prediction = []
     
     """WRITE YOUR VITERBI IMPLEMENTATION HERE"""
+
     print(emission)
-    # tag_list = {}
-    # tag_word_list = {}
-    # train = test
-    # tag_list,tag_word_list = count_tag(train,tag_list,tag_word_list)
+    print(initial)
+    print(transition)
+
     # for sentence in test:
     #     map = get_trellis_map(tag_list,sentence)
     #     findparent = {}
-    #     tag_find = cal_viterbi(sentence,findparent,map,transition,emission)
+    #     tag_find = cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word)
 
     #     for i in range(len(sentence)):
     #         tag_find[i] = (sentence[i],tag_find[i][1])

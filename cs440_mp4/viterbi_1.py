@@ -14,7 +14,6 @@ def backtrack(start,end,dic):
         child = path[-1]
         path.append(dic[child])
     path.reverse()
-    #print(path.reverse)
     return path
 
 def count_tag_word(train,tag_list,tag_word_list):
@@ -22,28 +21,30 @@ def count_tag_word(train,tag_list,tag_word_list):
     for sentence in train:
         for pair in sentence:
             word = pair[0]
-            if word not in word_list:
-                word_list.append(word)
-            tag = pair[1]
-            tag_word = (tag,word)
-            if (tag not in tag_list):
-                tag_list[tag] = 1
-            else:
-                tag_list[tag] += 1
-            if (tag_word not in tag_word_list):
-                tag_word_list[tag_word] = 1
-            else:
-                tag_word_list[tag_word] += 1
+            if (word != 'END'):
+                if word not in word_list:
+                    word_list.append(word)
+                tag = pair[1]
+                tag_word = (tag,word)
+                if (tag not in tag_list):
+                    tag_list[tag] = 1
+                else:
+                    tag_list[tag] += 1
+                if (tag_word not in tag_word_list):
+                    tag_word_list[tag_word] = 1
+                else:
+                    tag_word_list[tag_word] += 1
     return tag_list,tag_word_list,word_list
 
 def count_pair_list(train,tag_pair_list):
     for sentence in train:
         for j in range(len(sentence)-1):
-            tag_pair = (sentence[j][1],sentence[j+1][1])
-            if tag_pair not in tag_pair_list:
-                tag_pair_list[tag_pair] = 1
-            else:
-                tag_pair_list[tag_pair] += 1
+            if (sentence[j+1][1] != 'END'):
+                tag_pair = (sentence[j][1],sentence[j+1][1])
+                if tag_pair not in tag_pair_list:
+                    tag_pair_list[tag_pair] = 1
+                else:
+                    tag_pair_list[tag_pair] += 1
     return tag_pair_list
 
 def cal_total(table):
@@ -63,8 +64,6 @@ def cal_laplace_transition(alpha,dic,tag_list):
         for tag_pair in dic:
             countw = dic[tag_pair]
             prob_table[tag_pair] = math.log((countw+alpha)/(n+alpha*(V+1)))
-        # print(n)
-    # print(total_n,V)
     prob_table['UNK'] = math.log(alpha/(total_n+alpha*(V+1)))
     return prob_table
 
@@ -78,7 +77,6 @@ def cal_laplace_emission(alpha,tag_word_list,tag_list,word_type):
         countw = tag_word_list[tag_word]
         n_total += n
         prob_table[tag_word] = math.log((countw+alpha)/(n+alpha*(V+1)))
-    # print(n_total)
     prob_table['UNK'] = math.log(alpha/(n_total+alpha*(V+1)))
     return prob_table
 
@@ -93,7 +91,6 @@ def get_trellis_map(tags,sentence):
     return out
 
 def find_max_key(dic):
-    # breakpoint()
     high = -2**32
     k = None
     for key,value in dic.items():
@@ -148,11 +145,9 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
             map[time][key] = max
     
     last_tag_idx = length - 2
-    print(last_tag_idx)
     last_tag = find_max_key(map[last_tag_idx])
     findparent[(length-1,'END')] = (last_tag_idx,last_tag)
     to_return = backtrack((0,'START'),(length-1,'END'),findparent)
-    # print(to_return)
     return to_return
 
 def viterbi_1(train, test):
@@ -167,13 +162,12 @@ def viterbi_1(train, test):
     tag_word_list = {}
     tag_list,tag_word_list,word_list = count_tag_word(train,tag_list,tag_word_list)
     tag_pair_list = count_pair_list(train,tag_pair_list)
-    # print(tag_pair_list)
-    # print(tag_word_list)
-    laplace = 1/(2**14)
-    list_prob_tag_pair = cal_laplace_transition(laplace,tag_pair_list,tag_list)
-    # print(list_prob_tag_pair)
-    list_prob_tag_word = cal_laplace_emission(laplace,tag_word_list,tag_list,len(word_list))
-    # print(list_prob_tag_word)
+
+    transition_laplace = 0.000000025
+    emission_laplace = 0.0000001
+    list_prob_tag_pair = cal_laplace_transition(transition_laplace,tag_pair_list,tag_list)
+    list_prob_tag_word = cal_laplace_emission(emission_laplace,tag_word_list,tag_list,len(word_list))
+    
     output = []
 
     for sentence in test:
@@ -184,5 +178,4 @@ def viterbi_1(train, test):
         for i in range(len(sentence)):
             tag_find[i] = (sentence[i],tag_find[i][1])
         output.append(tag_find)
-    # print(output)
     return output
