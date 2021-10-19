@@ -58,11 +58,7 @@ def cal_laplace_transition(alpha,dic,tag_list):
     total_n = 0
     for time0 in tag_list:
         total_n += tag_list[time0]
-        n = 0
-        # ex: n = (START, NOUN) + (START,VERB)
-        for time1 in tag_list:
-            if (time0,time1) in dic:
-                n += dic[time0,time1]
+        n = tag_list[time0]
         
         for tag_pair in dic:
             countw = dic[tag_pair]
@@ -80,7 +76,7 @@ def cal_laplace_emission(alpha,tag_word_list,tag_list,word_type):
         tag = tag_word[0]
         n = tag_list[tag]
         countw = tag_word_list[tag_word]
-        n_total += countw
+        n_total += n
         prob_table[tag_word] = math.log((countw+alpha)/(n+alpha*(V+1)))
     # print(n_total)
     prob_table['UNK'] = math.log(alpha/(n_total+alpha*(V+1)))
@@ -123,7 +119,7 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
     for time in range(1,length-1):
         # emission
         for key,value in map[time].items():
-            max = -2**16
+            max = -inf
             max_key0 = None
             if ((key,sentence[time]) in list_prob_tag_word):
                 p_e = list_prob_tag_word[(key,sentence[time])]
@@ -150,8 +146,9 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word):
                 findparent[(time,key)] = (time-1,max_key0)
             # record into table
             map[time][key] = max
-
+    
     last_tag_idx = length - 2
+    print(last_tag_idx)
     last_tag = find_max_key(map[last_tag_idx])
     findparent[(length-1,'END')] = (last_tag_idx,last_tag)
     to_return = backtrack((0,'START'),(length-1,'END'),findparent)
