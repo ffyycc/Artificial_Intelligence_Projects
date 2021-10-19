@@ -157,8 +157,8 @@ def main():
     """WRITE YOUR VITERBI IMPLEMENTATION HERE"""
 
     print(emission)
-    print(initial)
-    print(transition)
+    # print(initial)
+    print(transition["START"])
 
     # for sentence in test:
     #     map = get_trellis_map(tag_list,sentence)
