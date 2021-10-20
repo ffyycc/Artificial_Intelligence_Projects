@@ -18,12 +18,9 @@ def backtrack(start,end,dic):
     return path
 
 def count_tag_word(train,tag_list,tag_word_list):
-    word_list = []
     for sentence in train:
         for pair in sentence:
             word = pair[0]
-            if word not in word_list:
-                word_list.append(word)
             tag = pair[1]
             tag_word = (tag,word)
             if (tag not in tag_list):
@@ -34,7 +31,7 @@ def count_tag_word(train,tag_list,tag_word_list):
                 tag_word_list[tag_word] = 1
             else:
                 tag_word_list[tag_word] += 1
-    return tag_list,tag_word_list,word_list
+    return tag_list,tag_word_list
 
 def count_pair_list(train,tag_pair_list):
     for sentence in train:
@@ -201,7 +198,7 @@ def viterbi_1(train, test):
     tag_list = {}
     tag_pair_list = {}
     tag_word_list = {}
-    tag_list,tag_word_list,word_list = count_tag_word(train,tag_list,tag_word_list)
+    tag_list,tag_word_list = count_tag_word(train,tag_list,tag_word_list)
     tag_pair_list = count_pair_list(train,tag_pair_list)
 
     transition_laplace = 1/(2**14)
