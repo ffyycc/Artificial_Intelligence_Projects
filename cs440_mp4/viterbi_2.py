@@ -91,6 +91,7 @@ def cal_laplace_transition(alpha,dic,tag_list):
         t1 = tag_pair[1]
         if (t0 == 'START'):
             prob_table[tag_pair]=(dic[tag_pair]+alpha)/(n+alpha*(V+1))
+            prob_table[('START','UNK')] = alpha/(n+alpha*(V+1))
 
     for tag_pair in dic:
         t0 = tag_pair[0]
@@ -99,8 +100,7 @@ def cal_laplace_transition(alpha,dic,tag_list):
             n = V_n_table[t0][1]
             countw = dic[tag_pair]
             prob_table[tag_pair] = (countw+alpha)/(n+alpha*(V+1))
-
-    prob_table['UNK'] = alpha/(total_n+alpha*(total_V+1))
+            prob_table[(t0,'UNK')] = alpha/(n+alpha*(V+1))
     return prob_table
 
 def get_hapex_dic(hapex_dic,tag_word):
@@ -136,6 +136,7 @@ def make_hapex_prob(hapex_dic):
 
 def get_hapex_prob_dic(tag_word_list):
     hapex_dic = {}
+    # print(tag_word_list)
     for tag_word in tag_word_list:
         if (tag_word[0] != 'START' and tag_word[0] != 'END'):
             hapex_dic = get_hapex_dic(hapex_dic,tag_word)
@@ -153,14 +154,16 @@ def cal_laplace_emission(alpha,tag_word_list,tag_list):
             V = V_n_table[tag_word[0]][0]
             n = V_n_table[tag_word[0]][1]
             countw = tag_word_list[tag_word]
+
             if (tag_word[0] not in hapex_dic):
                 prob = hapex_dic['UNK']
             else:
                 prob = hapex_dic[tag_word[0]]
+            # print(prob)
             scaled_alpha = alpha*prob
             prob_table[tag_word] = (countw+scaled_alpha)/(n+scaled_alpha*(V+1))
-
-    prob_table['UNK'] = alpha/(total_n+alpha*(total_V+1))
+            prob_table[(tag_word[0],'UNK')] = scaled_alpha/(n+scaled_alpha*(V+1))
+    # print(prob_table)
     return prob_table, hapex_dic
 
 def get_trellis_map(tags,sentence):
@@ -189,7 +192,7 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,ha
         if (key == 'START'):
             map[0]['START'] = 100
         else:
-            map[0][key] = list_prob_tag_word['UNK']
+            map[0][key] = 0.0001
     
     length = len(map)
 
@@ -206,15 +209,17 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,ha
             if ((key,sentence[time]) in list_prob_tag_word):
                 p_e = list_prob_tag_word[(key,sentence[time])]
             elif (key in hapex_prob):
-                p_e = list_prob_tag_word['UNK']*hapex_prob[key]     # edit pt2
+                p_e = list_prob_tag_word[(key,'UNK')]             # edit pt2
             else:
-                p_e = list_prob_tag_word['UNK']*hapex_prob['UNK']
+                p_e = 0.000000000000001*hapex_prob['UNK']
             # transition
             for key0,value0 in map[time-1].items():
+                if (key0 == 'END'):
+                    continue
                 if ((key0,key) in list_prob_tag_pair):
                     p_t = list_prob_tag_pair[(key0,key)]
                 else:
-                    p_t = list_prob_tag_pair['UNK']
+                    p_t = list_prob_tag_pair[(key0,'UNK')]
 
                 p_prev = map[time-1][key0]
                 temp = p_prev + math.log(p_t) + math.log(p_e)
@@ -248,8 +253,8 @@ def viterbi_2(train, test):
     tag_list,tag_word_list= count_tag_word(train,tag_list,tag_word_list)
     tag_pair_list = count_pair_list(train,tag_pair_list)
 
-    transition_laplace = 0.0000001
-    emission_laplace = 0.001
+    transition_laplace = 0.0001
+    emission_laplace = 0.00001
     list_prob_tag_pair = cal_laplace_transition(transition_laplace,tag_pair_list,tag_list)
     list_prob_tag_word,hapex_prob = cal_laplace_emission(emission_laplace,tag_word_list,tag_list)
     output = []
