@@ -5,6 +5,11 @@ This should do better than baseline and your first implementation of viterbi, es
 from math import inf
 import math
 import pdb
+def end_with(word,suffix):
+    if word.endswith(suffix):
+        return True
+    return False
+
 def backtrack(start,end,dic):
     path = []
     path.append(end)
@@ -113,55 +118,210 @@ def get_hapex_dic(hapex_dic,tag_word):
         hapex_dic[word][0] += 1
     return hapex_dic
 
+def give_suffix_dic(dic,word,tag,suffix,n):
+    if (end_with(word,suffix)):
+        n += 1
+        if (tag not in dic):
+            dic[tag] = 1
+        else:
+            dic[tag] += 1
+    return dic,n
+
+def cal_suffix_prob(dic,n,alpha):
+    newdic = {}
+    V = len(dic)
+    for tag in dic:
+        newdic[tag] = (alpha+dic[tag])/(n+alpha*(V+1))
+    newdic['UNK'] = alpha/(n+alpha*(V+1))
+    return newdic
+
 def make_hapex_prob(hapex_dic):
+    # print(hapex_dic)
     tag_dic = {}
+    ly_dic = {}
+    ing_dic ={}
+    num_dic = {}
+    pie_s_dic = {}
+    ed_dic ={}
+    tive_dic = {}
+    est_dic = {}
+    ous_dic = {}
+
     n = 0
+    n_ly = 0
+    n_num = 0
+    n_ing = 0
+    n_pie_s =0
+    n_ed = 0
+    n_tive = 0
+    n_est = 0
+    n_ous = 0
     for word in hapex_dic:
         times = hapex_dic[word][0]
         tag =hapex_dic[word][1]
+
+        if (times == 1):
+            if (end_with(word,'ly')):
+                n_ly +=1
+                if (tag not in ly_dic):
+                    ly_dic[tag] = 1
+                else:
+                    ly_dic[tag] += 1
+
+            ing_dic,n_ing = give_suffix_dic(ing_dic,word,tag,'ing',n_ing)
+            pie_s_dic, n_pie_s = give_suffix_dic(pie_s_dic,word,tag,"'s",n_pie_s)
+            ed_dic, n_ed = give_suffix_dic(ed_dic,word,tag,'ed',n_ed)
+            tive_dic,n_tive = give_suffix_dic(tive_dic,word,tag,'tive',n_tive)
+            est_dic,n_est = give_suffix_dic(est_dic,word,tag,'est',n_est)
+            ous_dic,n_ous = give_suffix_dic(ous_dic,word,tag,'ous',n_ous)
+            
+            if (word.isnumeric()):
+                n_num += 1
+                if (tag not in num_dic):
+                    num_dic[tag] = 1
+                else:
+                    num_dic[tag] += 1
+
         if (times == 1):
             n += 1
             if (tag not in tag_dic):
                 tag_dic[tag] = 1
             else:
                 tag_dic[tag] += 1
-    
+
     V = len(tag_dic)
+    V_ly = len(ly_dic)
+    V_num = len(num_dic)
+
     alpha = 0.000001
+    ing_dic = cal_suffix_prob(ing_dic,n_ing,alpha)
+    pie_s_dic = cal_suffix_prob(pie_s_dic,n_pie_s,alpha) 
+    ed_dic = cal_suffix_prob(ed_dic,n_ed,alpha)
+    tive_dic = cal_suffix_prob(tive_dic,n_tive,alpha)
+    est_dic = cal_suffix_prob(est_dic,n_est,alpha)
+    ous_dic = cal_suffix_prob(ous_dic,n_ous,alpha)
+
     for tag in tag_dic:
         tag_dic[tag] = (alpha+tag_dic[tag])/(n+alpha*(V+1))
-
     tag_dic['UNK'] = alpha/(n+alpha*(V+1))
-    return tag_dic
+
+    for tag in ly_dic:
+        ly_dic[tag] = (alpha+ly_dic[tag])/(n_ly+alpha*(V_ly+1))
+    ly_dic['UNK'] = alpha/(n_ly+alpha*(V_ly+1))
+
+    for tag in num_dic:
+        num_dic[tag] = (alpha+num_dic[tag])/(n_num+alpha*(V_num+1))
+    num_dic['UNK'] = alpha/(n_num+alpha*(V_num+1))
+    return tag_dic,ly_dic,num_dic,ing_dic,pie_s_dic,ed_dic,tive_dic,est_dic,ous_dic
 
 def get_hapex_prob_dic(tag_word_list):
     hapex_dic = {}
+
     for tag_word in tag_word_list:
         if (tag_word[0] != 'START' and tag_word[0] != 'END'):
             hapex_dic = get_hapex_dic(hapex_dic,tag_word)
-    tag_hapex_prob = make_hapex_prob(hapex_dic)
-    return tag_hapex_prob
+    tag_hapex_prob,ly_prob,num_dic,ing_dic,pie_s_dic,ed_dic,tive_dic,est_dic,ous_dic = make_hapex_prob(hapex_dic)
+    return tag_hapex_prob,ly_prob,num_dic,ing_dic,pie_s_dic,ed_dic,tive_dic,est_dic,ous_dic
 
 
 def cal_laplace_emission(alpha,tag_word_list,tag_list):
     V_n_table, total_V,total_n = make_V_n_emission_table(tag_word_list,tag_list)
     prob_table = {}
-    hapex_dic = get_hapex_prob_dic(tag_word_list)
+    normal_prob_table = {}
+    ly_prob_table = {}
+    num_prob_table = {}
+    ing_prob_table = {}
+    pie_s_prob_table = {}
+    ed_prob_table = {}
+    tive_prob_table = {}
+    est_prob_table = {}
+    ous_prob_table = {}
+    hapex_dic,ly_prob,num_dic,ing_dic,pie_s_dic,ed_dic,tive_dic,est_dic,ous_dic = get_hapex_prob_dic(tag_word_list)
     # print(hapex_dic)
+
     for tag_word in tag_word_list:
+        tag = tag_word[0]
+        word = tag_word[1]
         if (tag_word[0] != 'START' and tag_word[0] != 'END'):
             V = V_n_table[tag_word[0]][0]
             n = V_n_table[tag_word[0]][1]
             countw = tag_word_list[tag_word]
-            if (tag_word[0] not in hapex_dic):
-                prob = hapex_dic['UNK']
+
+            normal_prob_table[tag_word] = (countw+alpha)/(n+alpha*(V+1))
+            normal_prob_table[(tag_word[0],'UNK')] = alpha/(n+alpha*(V+1))
+
+            if (end_with(word,'ly')):
+                if (tag not in ly_prob):
+                    prob = ly_prob['UNK']
+                else:
+                    prob = ly_prob[tag]
+                scaled_alpha = alpha*prob
+                ly_prob_table[(tag_word[0],'UNK-ly')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
+            elif (word.isnumeric()):
+                if (tag not in num_dic):
+                    prob = num_dic['UNK']
+                else:
+                    prob = num_dic[tag]
+                scaled_alpha = alpha*prob
+                num_prob_table[(tag_word[0],'UNK-num')] = scaled_alpha/(n+scaled_alpha*(V+1))
+            elif (end_with(word,'ing')):
+                if (tag not in ing_dic):
+                    prob = ing_dic['UNK']
+                else:
+                    prob = ing_dic[tag]
+                scaled_alpha = alpha*prob
+                ing_prob_table[(tag_word[0],'UNK-ing')] = scaled_alpha/(n+scaled_alpha*(V+1))
+            elif (end_with(word,"'s")):
+                if (tag not in pie_s_dic):
+                    prob = pie_s_dic['UNK']
+                else:
+                    prob = pie_s_dic[tag]
+                scaled_alpha = alpha*prob
+                pie_s_prob_table[(tag_word[0],'UNK-pie_s')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
+            elif (end_with(word,'ed')):
+                if (tag not in ed_dic):
+                    prob = ed_dic['UNK']
+                else:
+                    prob = ed_dic[tag]
+                scaled_alpha = alpha*prob
+                ed_prob_table[(tag_word[0],'UNK-ed')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
+            elif (end_with(word,'est')):
+                if (tag not in est_dic):
+                    prob = est_dic['UNK']
+                else:
+                    prob = est_dic[tag]
+                scaled_alpha = alpha*prob
+                est_prob_table[(tag_word[0],'UNK-est')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
+            elif (end_with(word,'tive')):
+                if (tag not in tive_dic):
+                    prob = tive_dic['UNK']
+                else:
+                    prob = tive_dic[tag]
+                scaled_alpha = alpha*prob
+                tive_prob_table[(tag_word[0],'UNK-tive')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
+            elif (end_with(word,'ous')):
+                if (tag not in ous_dic):
+                    prob = ous_dic['UNK']
+                else:
+                    prob = ous_dic[tag]
+                scaled_alpha = alpha*prob
+                ous_prob_table[(tag_word[0],'UNK-ous')] = scaled_alpha/(n+scaled_alpha*(V+1))
+
             else:
-                prob = hapex_dic[tag_word[0]]
-            # print(prob)
-            scaled_alpha = alpha*prob
-            prob_table[tag_word] = (countw+scaled_alpha)/(n+scaled_alpha*(V+1))
-            prob_table[(tag_word[0],'UNK')] = scaled_alpha/(n+scaled_alpha*(V+1))
-    return prob_table, hapex_dic
+                if (tag_word[0] not in hapex_dic):
+                    prob = hapex_dic['UNK']
+                else:
+                    prob = hapex_dic[tag_word[0]]
+                # print(prob)
+                scaled_alpha = alpha*prob
+                prob_table[(tag_word[0],'UNK')] = scaled_alpha/(n+scaled_alpha*(V+1))
+    # print(prob_table)
+    return prob_table, hapex_dic,normal_prob_table,ly_prob_table,num_prob_table,ing_prob_table,pie_s_prob_table,ed_prob_table,tive_prob_table,est_prob_table,ous_prob_table
 
 def get_trellis_map(tags,sentence):
     out = []
@@ -174,7 +334,6 @@ def get_trellis_map(tags,sentence):
     return out
 
 def find_max_key(dic):
-    # breakpoint()
     high = -2**32
     k = None
     for key,value in dic.items():
@@ -183,7 +342,14 @@ def find_max_key(dic):
             k = key
     return k
 
-def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,hapex_prob):
+def get_tag(ly_prob):
+    l = []
+    for key,value in ly_prob.items():
+        l.append(key[0])
+    return l
+
+
+def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,hapex_prob,normal_prob,ly_prob,num_prob_table,ing_prob_table,pie_s_prob_table,ed_prob_table,tive_prob_table,est_prob_table,ous_prob_table):
     # setup
     for key,value in map[0].items():
         if (key == 'START'):
@@ -196,15 +362,67 @@ def cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,ha
     p_e = 0
     p_t = 0
     p_prev = 0
+    ly_tag_list = get_tag(ly_prob)
+    num_tag_list = get_tag(num_prob_table)
+    ing_tag_list =get_tag(ing_prob_table)
+    pie_s_tag_list =get_tag(pie_s_prob_table)
+    ed_tag_list = get_tag(ed_prob_table)
+    tive_tag_list = get_tag(tive_prob_table)
+    est_tag_list = get_tag(est_prob_table)
+    ous_tag_list = get_tag(ous_prob_table)
     # print(hapex_prob)
-
+    # print(list_prob_tag_word)
     for time in range(1,length-1):
         # emission
         for key,value in map[time].items():
             max = -2**16
             max_key0 = None
-            if ((key,sentence[time]) in list_prob_tag_word):
-                p_e = list_prob_tag_word[(key,sentence[time])]
+            word = sentence[time]
+            if ((key,sentence[time]) in normal_prob):
+                p_e = normal_prob[(key,sentence[time])]
+            elif (end_with(word,'ly')):
+                if (key in ly_tag_list):
+                    p_e = ly_prob[(key,'UNK-ly')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (word.isnumeric()):
+                if (key in num_tag_list):
+                    p_e = num_prob_table[(key,'UNK-num')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (end_with(word,'ing')):
+                if (key in ing_tag_list):
+                    p_e = ing_prob_table[(key,'UNK-ing')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (end_with(word,"'s")):
+                # breakpoint()
+                if (key in pie_s_tag_list):
+                    p_e = pie_s_prob_table[(key,'UNK-pie_s')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (end_with(word,'ed')):
+                if (key in ed_tag_list):
+                    p_e = ed_prob_table[(key,'UNK-ed')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+
+            elif (end_with(word,'tive')):
+                if (key in tive_tag_list):
+                    p_e = tive_prob_table[(key,'UNK-tive')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (end_with(word,'est')):
+                if (key in est_tag_list):
+                    p_e = est_prob_table[(key,'UNK-est')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+            elif (end_with(word,'ous')):
+                if (key in ous_tag_list):
+                    p_e = ous_prob_table[(key,'UNK-ous')]
+                else:
+                    p_e = 0.000000000000001*hapex_prob['UNK']
+
             elif (key in hapex_prob):
                 p_e = list_prob_tag_word[(key,'UNK')]             # edit pt2
             else:
@@ -250,16 +468,17 @@ def viterbi_3(train, test):
     tag_list,tag_word_list= count_tag_word(train,tag_list,tag_word_list)
     tag_pair_list = count_pair_list(train,tag_pair_list)
 
-    transition_laplace = 0.0000001
-    emission_laplace = 0.001
+    transition_laplace = 0.0001
+    emission_laplace = 0.00001
     list_prob_tag_pair = cal_laplace_transition(transition_laplace,tag_pair_list,tag_list)
-    list_prob_tag_word,hapex_prob = cal_laplace_emission(emission_laplace,tag_word_list,tag_list)
+    list_prob_tag_word,hapex_prob,normal_prob,ly_prob,num_prob_table,ing_prob_table,pie_s_prob_table,ed_prob_table,tive_prob_table,est_prob_table,ous_prob_table = cal_laplace_emission(emission_laplace,tag_word_list,tag_list)
+
     output = []
 
     for sentence in test:
         map = get_trellis_map(tag_list,sentence)
         findparent = {}
-        tag_find = cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,hapex_prob)
+        tag_find = cal_viterbi(sentence,findparent,map,list_prob_tag_pair,list_prob_tag_word,hapex_prob,normal_prob,ly_prob,num_prob_table,ing_prob_table,pie_s_prob_table,ed_prob_table,tive_prob_table,est_prob_table,ous_prob_table)
 
         for i in range(len(sentence)):
             tag_find[i] = (sentence[i],tag_find[i][1])
