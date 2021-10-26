@@ -1,0 +1,3 @@
+cat=A dog=B cow=D
+pit=A pat=C pin=D
+hello=A hi=B x=C
