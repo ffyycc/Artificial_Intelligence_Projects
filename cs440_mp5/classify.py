@@ -80,4 +80,31 @@ def classifyPerceptron(train_set, train_labels, dev_set, learning_rate, max_iter
 
 def classifyKNN(train_set, train_labels, dev_set, k):
     # TODO: Write your code here
-    return []
+    num_pic = len(train_labels)
+    num_dim = len(train_set[0])
+    num_test = len(dev_set)
+    
+    out = []
+    # breakpoint()
+    for i in range(num_test):
+        val_list = np.zeros(num_pic)
+        for j in range(num_pic):
+            diff = np.absolute(train_set[j]-dev_set[i])
+            l1 = np.sum(diff)
+            val_list[j] = l1
+        small_list = np.argsort(val_list)[:k]
+        
+        num_t = 0
+        num_f = 0
+        for idx in small_list:
+            if (train_labels[idx] == True):
+                num_t += 1
+            else:
+                num_f += 1
+
+        if (num_t > num_f):
+            out.append(1)
+        else:
+            out.append(0)
+
+    return out
