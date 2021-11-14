@@ -24,7 +24,6 @@ import torch.optim as optim
 from utils import get_dataset_from_arrays
 from torch.utils.data import DataLoader
 
-
 class NeuralNet(nn.Module):
     def __init__(self, lrate, loss_fn, in_size, out_size):
         """
@@ -50,11 +49,10 @@ class NeuralNet(nn.Module):
         self.lrate = lrate
         self.in_size = in_size
         self.out_size = out_size
-        self.model = nn.Sequential(
-          nn.Linear(in_size,32),
-          nn.Sigmoid(),
-          nn.Linear(32,out_size),
-        )
+        self.seq1 = nn.Linear(in_size,32)
+        self.seq2 = nn.Sigmoid()
+        self.seq3 = nn.Linear(32,out_size)
+        self.opt = torch.optim.SGD(self.parameters(), self.lrate, momentum=0.9)
     
 
     def forward(self, x):
@@ -64,7 +62,8 @@ class NeuralNet(nn.Module):
         @return y: an (N, out_size) Tensor of output from the network
         """
         # torch.ones(x.shape[0], 1)
-        return self.model(x)
+        out = self.seq3(self.seq2(self.seq1(x)))
+        return out
 
     def step(self, x,y):
         """
@@ -74,12 +73,12 @@ class NeuralNet(nn.Module):
         @param y: an (N,) Tensor
         @return L: total empirical risk (mean of losses) for this batch as a float (scalar)
         """
+        opt = self.opt
+        opt.zero_grad()
         loss_fn = self.loss_fn
         yhat = self.forward(x)
         backward_loss = loss_fn(yhat,y)
         backward_loss.backward()
-        opt = optim.SGD(self.model.parameters(), lr=self.lrate)
-        opt.zero_grad()
         opt.step()
         # breakpoint()
         return backward_loss.item()
@@ -111,13 +110,21 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
     criterion = nn.CrossEntropyLoss()
     in_size = 32*32*3
     out_size = 4
-    n_n = NeuralNet(0.01,criterion,in_size,out_size)
+    n_n = NeuralNet(0.02,criterion,in_size,out_size)
     
     num_pic = len(train_labels)
     num_test = len(dev_set)
     
+    np_train_set = np.array(train_set)
+
     # standarize
-    std_list = (train_set-train_set.mean())/train_set.std()
+    # std_list = (train_set-train_set.mean())/train_set.std()
+    for idx in range(num_pic):
+        mean = np.mean(np_train_set[idx])
+        std = np.std(np_train_set[idx])
+        np_train_set[idx] = (np_train_set[idx]-mean)/std
+    # breakpoint()
+    std_list = np_train_set
 
     # extend list to prevent out of bound
     loss_list = []
@@ -125,14 +132,12 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
         st_idx = i*batch_size%num_pic
         ed_idx = st_idx+batch_size
 
-        # if (ed_idx >= num_pic):
-        #     std_list.extend(std_list)
-        #     train_labels.extend(train_labels)
         subset = std_list[st_idx:ed_idx]
         sublabel = train_labels[st_idx:ed_idx]
         # if (i == 22):
         #     breakpoint
-        back_loss = n_n.step(subset,sublabel)
+
+        back_loss = n_n.step(torch.tensor(subset),torch.tensor(sublabel))
         loss_list.append(back_loss)
 
     # print(loss_list)
@@ -142,8 +147,7 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
     for j in range(num_test):
         max_index = pred_no_tensor[j].index(max(pred_no_tensor[j]))
         out.append(max_index)
-    # loss_list = np.array(loss_list)
+    loss_list = np.array(loss_list)
     # breakpoint()
     out = np.array(out)
-    print(loss_list)
-    return loss_list,out,n_n
+    return list(loss_list),out,n_n
