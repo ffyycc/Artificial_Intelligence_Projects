@@ -11,12 +11,12 @@
 
 """
 This is the main entry point for MP3. You should only modify code
-within this file and neuralnet_part1.py,neuralnet_leaderboard -- the unrevised staff files will be used for all other
+within this file, neuralnet_learderboard and neuralnet_part2.py -- the unrevised staff files will be used for all other
 files and classes when code is run, so be careful to not modify anything else.
 """
 
 import numpy as np
-
+import pdb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,16 +39,29 @@ class NeuralNet(nn.Module):
         """
         super(NeuralNet, self).__init__()
         self.loss_fn = loss_fn
-        raise NotImplementedError("You need to write this part!")
+        self.lrate = lrate
+        self.in_size = in_size
+        self.out_size = out_size
+        self.model = nn.Sequential(
+            nn.Linear(in_size,32),
+            nn.Softplus(),
+            # nn.Dropout(p=0.2),
+            nn.Linear(32,out_size)
+
+        )
         
+        self.opt = torch.optim.SGD(self.parameters(), self.lrate, momentum=0.9)
+    
+
     def forward(self, x):
         """Performs a forward pass through your neural net (evaluates f(x)).
 
         @param x: an (N, in_size) Tensor
         @return y: an (N, out_size) Tensor of output from the network
         """
-        raise NotImplementedError("You need to write this part!")
-        return torch.ones(x.shape[0], 1)
+        # torch.ones(x.shape[0], 1)
+        out = self.model(x)
+        return out
 
     def step(self, x,y):
         """
@@ -58,8 +71,17 @@ class NeuralNet(nn.Module):
         @param y: an (N,) Tensor
         @return L: total empirical risk (mean of losses) for this batch as a float (scalar)
         """
-        raise NotImplementedError("You need to write this part!")
-        return 0.0
+        opt = self.opt
+        opt.zero_grad()
+        loss_fn = self.loss_fn
+        yhat = self.forward(x)
+        backward_loss = loss_fn(yhat,y)
+        backward_loss.backward()
+        opt.step()
+        # breakpoint()
+        return backward_loss.item()
+
+
 
 def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
     """ Make NeuralNet object 'net' and use net.step() to train a neural net
@@ -76,10 +98,57 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
     The model's performance could be sensitive to the choice of learning rate.
     We recommend trying different values in case your first choice does not seem to work well.
 
-    @return losses: list of total loss at the beginning and after each epoch.
+    @return losses: list of floats containing the total loss at the beginning and after each epoch.
             Ensure that len(losses) == epochs.
     @return yhats: an (M,) NumPy array of binary labels for dev_set
     @return net: a NeuralNet object
     """
-    raise NotImplementedError("You need to write this part!")
-    return [],[],None
+    # return a list of the losses for each epoch of training, a numpy array with the estimated 
+    # class labels (0, 1, 2, or 3) for the dev set and the trained network
+    criterion = nn.CrossEntropyLoss()
+    in_size = 32*32*3
+    out_size = 4
+    n_n = NeuralNet(0.02,criterion,in_size,out_size)
+    
+    num_pic = len(train_labels)
+    num_test = len(dev_set)
+    
+    np_train_set = np.array(train_set)
+
+    # standarize
+    # std_list = (train_set-train_set.mean())/train_set.std()
+    for idx in range(num_pic):
+        mean = np.mean(np_train_set[idx])
+        std = np.std(np_train_set[idx])
+        np_train_set[idx] = (np_train_set[idx]-mean)/std
+    # breakpoint()
+    std_list = np_train_set
+
+    # extend list to prevent out of bound
+    loss_list = []
+    for i in range(epochs):
+        st_idx = i*batch_size%num_pic
+        ed_idx = st_idx+batch_size
+
+        subset = std_list[st_idx:ed_idx]
+        sublabel = train_labels[st_idx:ed_idx]
+        # if (i == 22):
+        #     breakpoint
+        
+        # normalization
+        m = nn.BatchNorm1d(3072)
+
+        back_loss = n_n.step(torch.tensor(subset),torch.tensor(sublabel))
+        loss_list.append(back_loss)
+
+    # print(loss_list)
+    pred_list = n_n.forward(dev_set)
+    pred_no_tensor = pred_list.tolist()
+    out = []
+    for j in range(num_test):
+        max_index = pred_no_tensor[j].index(max(pred_no_tensor[j]))
+        out.append(max_index)
+    loss_list = np.array(loss_list)
+    # breakpoint()
+    out = np.array(out)
+    return list(loss_list),out,n_n
