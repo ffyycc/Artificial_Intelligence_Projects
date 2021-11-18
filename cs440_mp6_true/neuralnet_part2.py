@@ -54,7 +54,7 @@ class NeuralNet(nn.Module):
             nn.MaxPool2d(kernel_size=3),
             nn.LeakyReLU(),
             nn.Dropout(p=0.01),
-            nn.Conv2d(in_channels=12,out_channels=24,kernel_size=3,stride=1,padding=1),
+            nn.Conv2d(in_channels=12,out_channels=36,kernel_size=3,stride=1,padding=1),
             nn.LeakyReLU(),
             nn.Dropout(p=0.01),
             nn.MaxPool2d(kernel_size=3),
@@ -63,7 +63,7 @@ class NeuralNet(nn.Module):
             # nn.LeakyReLU(),
             # nn.Dropout(p=0.01),
             nn.Flatten(),
-            nn.Linear(216,out_size)
+            nn.Linear(324,out_size)
 
         )
         
