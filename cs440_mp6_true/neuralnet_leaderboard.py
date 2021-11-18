@@ -20,6 +20,9 @@ import pdb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.modules.activation import LeakyReLU
+from torch.nn.modules.dropout import Dropout
+from torch.nn.modules.pooling import MaxPool2d
 import torch.optim as optim
 from utils import get_dataset_from_arrays
 from torch.utils.data import DataLoader
@@ -36,22 +39,34 @@ class NeuralNet(nn.Module):
             @return l(x,y) an () Tensor that is the mean loss
         @param in_size: input dimension
         @param out_size: output dimension
-
-        For Part 1 the network should have the following architecture (in terms of hidden units):
-
-        in_size -> 32 ->  out_size
-        
-        We recommend setting lrate to 0.01 for part 1.
-
         """
         super(NeuralNet, self).__init__()
         self.loss_fn = loss_fn
         self.lrate = lrate
         self.in_size = in_size
         self.out_size = out_size
-        self.seq1 = nn.Linear(in_size,32)
-        self.seq2 = nn.Sigmoid()
-        self.seq3 = nn.Linear(32,out_size)
+        self.model = nn.Sequential(
+            # nn.Linear(in_size,200),
+            # nn.LeakyReLU(),
+            # nn.Dropout(p=0.03),
+            # nn.Linear(200,out_size)
+            nn.Conv2d(in_channels=3,out_channels=12,kernel_size=4,stride=1,padding=1),
+            nn.MaxPool2d(kernel_size=3),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.01),
+            nn.Conv2d(in_channels=12,out_channels=24,kernel_size=3,stride=1,padding=1),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.01),
+            nn.MaxPool2d(kernel_size=3),
+            # nn.Conv2d(in_channels=48,out_channels=96,kernel_size=3,stride=1,padding=1),
+            # nn.MaxPool2d(kernel_size=3),
+            # nn.LeakyReLU(),
+            # nn.Dropout(p=0.01),
+            nn.Flatten(),
+            nn.Linear(216,out_size)
+
+        )
+        
         self.opt = torch.optim.SGD(self.parameters(), self.lrate, momentum=0.9)
     
 
@@ -62,7 +77,11 @@ class NeuralNet(nn.Module):
         @return y: an (N, out_size) Tensor of output from the network
         """
         # torch.ones(x.shape[0], 1)
-        out = self.seq3(self.seq2(self.seq1(x)))
+        reshape = x.view(x.shape[0],3,32,32)
+        reshape_norm = reshape
+        for i in range(x.shape[0]):
+            reshape_norm[i] = (reshape[i]-torch.mean(reshape[i])) / torch.std(reshape[i])
+        out = self.model(reshape_norm)
         return out
 
     def step(self, x,y):
@@ -110,7 +129,7 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
     criterion = nn.CrossEntropyLoss()
     in_size = 32*32*3
     out_size = 4
-    n_n = NeuralNet(0.03,criterion,in_size,out_size)
+    n_n = NeuralNet(0.02,criterion,in_size,out_size)
     
     num_pic = len(train_labels)
     num_test = len(dev_set)
@@ -128,17 +147,21 @@ def fit(train_set,train_labels,dev_set,epochs,batch_size=100):
 
     # extend list to prevent out of bound
     loss_list = []
-    for i in range(epochs):
-        st_idx = i*batch_size%num_pic
-        ed_idx = st_idx+batch_size
+    for j in range(epochs):
+        for i in range(num_pic//batch_size):
+            st_idx = i*batch_size%num_pic
+            ed_idx = st_idx+batch_size
 
-        subset = std_list[st_idx:ed_idx]
-        sublabel = train_labels[st_idx:ed_idx]
-        # if (i == 22):
-        #     breakpoint
+            subset = std_list[st_idx:ed_idx]
+            sublabel = train_labels[st_idx:ed_idx]
+            # if (i == 22):
+            #     breakpoint
+            
+            # normalization
+            m = nn.BatchNorm1d(3072)
 
-        back_loss = n_n.step(torch.tensor(subset),torch.tensor(sublabel))
-        loss_list.append(back_loss)
+            back_loss = n_n.step(torch.tensor(subset),sublabel)
+            loss_list.append(back_loss)
 
     # print(loss_list)
     pred_list = n_n.forward(dev_set)
