@@ -1,5 +1,6 @@
 import numpy as np
 import utils
+import pdb
 
 class Agent:    
     def __init__(self, actions, Ne=40, C=40, gamma=0.7):
@@ -55,7 +56,77 @@ class Agent:
 
         return None
 
+    # return (food_dir_x, food_dir_y)
+    def food_dir(self,snake_head_axis,food_axis):
+        if (food_axis[0] < snake_head_axis[0]):
+            x = 1
+        elif (food_axis[0] > snake_head_axis[0]):
+            x = 2
+        else:
+            x = 0
+        
+        if (food_axis[1] < snake_head_axis[1]):
+            y = 1
+        elif (food_axis[1] > snake_head_axis[1]):
+            y = 2
+        else:
+            y = 0
+        return (x,y)
+
+    def adjoining_wall(self,snake_head_axis):
+        num_block = utils.DISPLAY_SIZE/utils.GRID_SIZE
+        snake_head_x = snake_head_axis[0]/utils.GRID_SIZE
+        snake_head_y = snake_head_axis[1]/utils.GRID_SIZE
+        if (snake_head_x - 1 == 0):
+            x = 1
+        elif (snake_head_x + 1 == num_block-1):
+            x = 2
+        else:
+            x = 0
+        
+        if (snake_head_y - 1 == 0):
+            y = 1
+        elif(snake_head_y + 1 == num_block-1):
+            y = 2
+        else: 
+            y = 0
+        return (x,y)
+
+    def adj_body(self,snake_head_axis,snake_body):
+        adj_body_top, adj_body_bot,adj_body_left,adj_body_right = 0,0,0,0
+        x_head = snake_head_axis[0]
+        y_head = snake_head_axis[1]
+        grid_size = utils.GRID_SIZE
+        for element in snake_body:
+            x_body = element[0]
+            y_body = element[1]
+            if (y_body == y_head - grid_size):
+                adj_body_top = 1
+            if (y_body == y_head + grid_size):
+                adj_body_bot = 1
+            if (x_body == x_head - grid_size):
+                adj_body_left = 1
+            if (x_body == x_head + grid_size):
+                adj_body_right = 1
+        return adj_body_top, adj_body_bot,adj_body_left,adj_body_right
+
+
     def generate_state(self, environment):
         # TODO: Implement this helper function that generates a state given an environment 
+        # tuple (food_dir_x, food_dir_y, adjoining_wall_x, adjoining_wall_y, adjoining_body_top, adjoining_body_bottom, adjoining_body_left, adjoining_body_right)
+        # environment(snake_head_x,snake_head_y, body, food_x, food_y)
+        snake_head_axis = (environment[0],environment[1])
+        snake_body = environment[2]
+        food_axis = (environment[3],environment[4])
 
-        return None
+        food_dir_axis = self.food_dir(snake_head_axis,food_axis)
+        food_dir_x = food_dir_axis[0]
+        food_dir_y = food_dir_axis[1]
+
+        adjoining_wall_axis = self.adjoining_wall(snake_head_axis)
+        adj_wall_x = adjoining_wall_axis[0]
+        adj_wall_y = adjoining_wall_axis[1]
+
+        adj_body_top, adj_body_bot,adj_body_left,adj_body_right = self.adj_body(snake_head_axis,snake_body)
+        to_return = (food_dir_x, food_dir_y, adj_wall_x, adj_wall_y, adj_body_top, adj_body_bot, adj_body_left, adj_body_right)
+        return to_return
