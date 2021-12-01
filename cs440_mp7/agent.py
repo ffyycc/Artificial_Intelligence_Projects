@@ -38,7 +38,43 @@ class Agent:
         self.points = 0
         self.s = None # state
         self.a = None # action
+
+    def take_action(self,Q_table,N_table,state):
+        # priority order RIGHT > LEFT > DOWN > UP
+        # breakpoint()
+        if (N_table[state][utils.RIGHT] < self.Ne):
+            return utils.RIGHT
+        elif (N_table[state][utils.LEFT] < self.Ne):
+            return utils.LEFT
+        elif (N_table[state][utils.DOWN] < self.Ne):
+            return utils.DOWN
+        elif (N_table[state][utils.UP] < self.Ne):
+            return utils.UP
     
+        action_list = Q_table[state]
+        max_value = max(Q_table[state])
+        unique_num = len(np.unique(action_list))
+        if (unique_num == 4):
+            return action_list.index(max_value)
+        else:
+            # priority order RIGHT > LEFT > DOWN > UP
+            if (action_list[utils.RIGHT] == max_value):
+                return utils.RIGHT
+            elif (action_list[utils.LEFT] == max_value):
+                return utils.LEFT
+            elif (action_list[utils.DOWN] == max_value):
+                return utils.DOWN
+            else:
+                return utils.UP
+        
+
+    def dead_check(self,new_state):
+        # TODO: implement this after action
+
+        max_step = 8*((utils.DISPLAY_SIZE/utils.GRID_SIZE)-1)**2
+
+        return False
+
     def act(self, environment, points, dead):
         '''
         :param environment: a list of [snake_head_x, snake_head_y, snake_body, food_x, food_y] to be converted to a state.
@@ -53,6 +89,17 @@ class Agent:
         s_prime = self.generate_state(environment)
 
         # TODO: write your function here
+        state = s_prime
+        self.train()
+        N_table = self.N
+        Q_table = self.Q
+        # breakpoint()
+        snake_head_axis = (environment[0],environment[1])
+        snake_body = environment[2]
+        food_axis = (environment[3],environment[4])
+        action = self.take_action(Q_table,N_table,state)
+
+        # get reward
 
         return None
 
