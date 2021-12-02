@@ -74,6 +74,8 @@ class Agent:
 
     def update_N_Q_table(self,N_table,Q_table,state_new,award):
         # update N-table and Q-table
+        # if (self.iteration > 100):
+        #     breakpoint()
         old_state = self.s 
         old_action = self.a
         N_table[old_state][old_action] += 1
@@ -99,8 +101,6 @@ class Agent:
 
         # TODO: write your function here
         self.iteration += 1
-        state = s_prime
-        self.train()
         N_table = self.N
         Q_table = self.Q
 
@@ -114,37 +114,21 @@ class Agent:
             award = -0.1
         
         # cal N and Q and update table
-        self.N, self.Q = self.update_N_Q_table(N_table,Q_table,s_prime,award)
+        if (self.iteration != 1):
+            self.N, self.Q = self.update_N_Q_table(N_table,Q_table,s_prime,award)
 
         if (dead == True):
             self.reset()
             return utils.DOWN
 
 
-        new_action,explore = self.take_action(Q_table,N_table,s_prime)
+        action_prime,explore = self.take_action(Q_table,N_table,s_prime)
         # create new environment and state
         # environment(snake_head_x,snake_head_y, body, food_x, food_y)
-        env_new = environment
-
-        if (new_action == utils.LEFT):
-            env_new[0] = environment[0]-utils.GRID_SIZE
-            env_new[1] = environment[1]
-        elif (new_action == utils.RIGHT):
-            env_new[0] = environment[0]+utils.GRID_SIZE
-            env_new[1] = environment[1]
-        elif (new_action == utils.UP):
-            env_new[1] = environment[1]-utils.GRID_SIZE
-            env_new[0] = environment[0]
-        elif (new_action == utils.DOWN):
-            env_new[1] = environment[1]+utils.GRID_SIZE
-            env_new[0] = environment[0]
-
-        state_new = self.generate_state(env_new)
-        
         # update previous state and action
-        self.s = state_new
-        self.a = new_action
-        return new_action
+        self.s = s_prime
+        self.a = action_prime
+        return action_prime
 
     # return (food_dir_x, food_dir_y)
     def food_dir(self,snake_head_axis,food_axis):
