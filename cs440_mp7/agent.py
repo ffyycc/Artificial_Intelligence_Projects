@@ -13,6 +13,7 @@ class Agent:
         # Create the Q Table to work with
         self.Q = utils.create_q_table()
         self.N = utils.create_q_table()
+        self.iteration = 0
         
     def train(self):
         self._train = True
@@ -41,39 +42,47 @@ class Agent:
 
     def take_action(self,Q_table,N_table,state):
         # priority order RIGHT > LEFT > DOWN > UP
-        # breakpoint()
+        # if (self.iteration >= 200):
+        #     breakpoint()
+
+
         if (N_table[state][utils.RIGHT] < self.Ne):
-            return utils.RIGHT
+            return utils.RIGHT,True
         elif (N_table[state][utils.LEFT] < self.Ne):
-            return utils.LEFT
+            return utils.LEFT,True
         elif (N_table[state][utils.DOWN] < self.Ne):
-            return utils.DOWN
+            return utils.DOWN,True
         elif (N_table[state][utils.UP] < self.Ne):
-            return utils.UP
+            return utils.UP,True
     
         action_list = Q_table[state]
         max_value = max(Q_table[state])
         unique_num = len(np.unique(action_list))
         if (unique_num == 4):
-            return action_list.index(max_value)
+            action_list = list(action_list)
+            return action_list.index(max_value),False
         else:
             # priority order RIGHT > LEFT > DOWN > UP
             if (action_list[utils.RIGHT] == max_value):
-                return utils.RIGHT
+                return utils.RIGHT,False
             elif (action_list[utils.LEFT] == max_value):
-                return utils.LEFT
+                return utils.LEFT,False
             elif (action_list[utils.DOWN] == max_value):
-                return utils.DOWN
+                return utils.DOWN,False
             else:
-                return utils.UP
-        
+                return utils.UP,False
 
-    def dead_check(self,new_state):
-        # TODO: implement this after action
+    def update_N_Q_table(self,N_table,Q_table,state_new,award):
+        # update N-table and Q-table
+        old_state = self.s 
+        old_action = self.a
+        N_table[old_state][old_action] += 1
 
-        max_step = 8*((utils.DISPLAY_SIZE/utils.GRID_SIZE)-1)**2
+        alpha = self.C/(self.C+N_table[old_state][old_action])
 
-        return False
+        future_value = max(Q_table[state_new])
+        Q_table[old_state][old_action] = Q_table[old_state][old_action] + alpha*(award+self.gamma*future_value-Q_table[old_state][old_action])
+        return N_table,Q_table
 
     def act(self, environment, points, dead):
         '''
@@ -89,19 +98,53 @@ class Agent:
         s_prime = self.generate_state(environment)
 
         # TODO: write your function here
+        self.iteration += 1
         state = s_prime
         self.train()
         N_table = self.N
         Q_table = self.Q
-        # breakpoint()
-        snake_head_axis = (environment[0],environment[1])
-        snake_body = environment[2]
-        food_axis = (environment[3],environment[4])
-        action = self.take_action(Q_table,N_table,state)
 
-        # get reward
+        if (dead == True):
+            award = -1
+        elif (points > self.points):
+            # breakpoint()
+            award = 1
+            self.points = points
+        else:
+            award = -0.1
+        
+        # cal N and Q and update table
+        self.N, self.Q = self.update_N_Q_table(N_table,Q_table,s_prime,award)
 
-        return None
+        if (dead == True):
+            self.reset()
+            return utils.DOWN
+
+
+        new_action,explore = self.take_action(Q_table,N_table,s_prime)
+        # create new environment and state
+        # environment(snake_head_x,snake_head_y, body, food_x, food_y)
+        env_new = environment
+
+        if (new_action == utils.LEFT):
+            env_new[0] = environment[0]-utils.GRID_SIZE
+            env_new[1] = environment[1]
+        elif (new_action == utils.RIGHT):
+            env_new[0] = environment[0]+utils.GRID_SIZE
+            env_new[1] = environment[1]
+        elif (new_action == utils.UP):
+            env_new[1] = environment[1]-utils.GRID_SIZE
+            env_new[0] = environment[0]
+        elif (new_action == utils.DOWN):
+            env_new[1] = environment[1]+utils.GRID_SIZE
+            env_new[0] = environment[0]
+
+        state_new = self.generate_state(env_new)
+        
+        # update previous state and action
+        self.s = state_new
+        self.a = new_action
+        return new_action
 
     # return (food_dir_x, food_dir_y)
     def food_dir(self,snake_head_axis,food_axis):
@@ -144,17 +187,19 @@ class Agent:
         x_head = snake_head_axis[0]
         y_head = snake_head_axis[1]
         grid_size = utils.GRID_SIZE
-        for element in snake_body:
-            x_body = element[0]
-            y_body = element[1]
-            if (y_body == y_head - grid_size):
-                adj_body_top = 1
-            if (y_body == y_head + grid_size):
-                adj_body_bot = 1
-            if (x_body == x_head - grid_size):
-                adj_body_left = 1
-            if (x_body == x_head + grid_size):
-                adj_body_right = 1
+        if (len(snake_body)!=0):
+            for i in range(len(snake_body)):
+                element = snake_body[i]
+                x_body = element[0]
+                y_body = element[1]
+                if (y_body == y_head - grid_size):
+                    adj_body_top = 1
+                if (y_body == y_head + grid_size):
+                    adj_body_bot = 1
+                if (x_body == x_head - grid_size):
+                    adj_body_left = 1
+                if (x_body == x_head + grid_size):
+                    adj_body_right = 1
         return adj_body_top, adj_body_bot,adj_body_left,adj_body_right
 
 
