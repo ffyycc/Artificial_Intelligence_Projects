@@ -39,49 +39,40 @@ class Agent:
         self.points = 0
         self.s = None # state
         self.a = None # action
+        self.iteration = 0
 
-    def take_action(self,Q_table,N_table,state):
+    def take_action(self,Q_table,N_table,state,train):
         # priority order RIGHT > LEFT > DOWN > UP
-        # if (self.iteration >= 200):
-        #     breakpoint()
-
-
-        if (N_table[state][utils.RIGHT] < self.Ne):
-            return utils.RIGHT,True
-        elif (N_table[state][utils.LEFT] < self.Ne):
-            return utils.LEFT,True
-        elif (N_table[state][utils.DOWN] < self.Ne):
-            return utils.DOWN,True
-        elif (N_table[state][utils.UP] < self.Ne):
-            return utils.UP,True
+        if (train == True):
+            if (N_table[state][utils.RIGHT] < self.Ne):
+                return utils.RIGHT,True
+            elif (N_table[state][utils.LEFT] < self.Ne):
+                return utils.LEFT,True
+            elif (N_table[state][utils.DOWN] < self.Ne):
+                return utils.DOWN,True
+            elif (N_table[state][utils.UP] < self.Ne):
+                return utils.UP,True
     
         action_list = Q_table[state]
         max_value = max(Q_table[state])
-        unique_num = len(np.unique(action_list))
-        if (unique_num == 4):
-            action_list = list(action_list)
-            return action_list.index(max_value),False
+
+        # priority order RIGHT > LEFT > DOWN > UP
+        if (action_list[utils.RIGHT] == max_value):
+            return utils.RIGHT,False
+        elif (action_list[utils.LEFT] == max_value):
+            return utils.LEFT,False
+        elif (action_list[utils.DOWN] == max_value):
+            return utils.DOWN,False
         else:
-            # priority order RIGHT > LEFT > DOWN > UP
-            if (action_list[utils.RIGHT] == max_value):
-                return utils.RIGHT,False
-            elif (action_list[utils.LEFT] == max_value):
-                return utils.LEFT,False
-            elif (action_list[utils.DOWN] == max_value):
-                return utils.DOWN,False
-            else:
-                return utils.UP,False
+            return utils.UP,False
 
     def update_N_Q_table(self,N_table,Q_table,state_new,award):
         # update N-table and Q-table
-        # if (self.iteration > 100):
-        #     breakpoint()
         old_state = self.s 
         old_action = self.a
         N_table[old_state][old_action] += 1
 
         alpha = self.C/(self.C+N_table[old_state][old_action])
-
         future_value = max(Q_table[state_new])
         Q_table[old_state][old_action] = Q_table[old_state][old_action] + alpha*(award+self.gamma*future_value-Q_table[old_state][old_action])
         return N_table,Q_table
@@ -104,27 +95,27 @@ class Agent:
         N_table = self.N
         Q_table = self.Q
 
-        if (dead == True):
-            award = -1
-        elif (points > self.points):
-            # breakpoint()
-            award = 1
-            self.points = points
-        else:
-            award = -0.1
-        
-        # cal N and Q and update table
-        if (self.iteration != 1):
-            self.N, self.Q = self.update_N_Q_table(N_table,Q_table,s_prime,award)
+        if (self._train):
+            if (dead == True):
+                award = -1
+            elif (points > self.points):
+                # breakpoint()
+                award = 1
+                self.points = points
+            else:
+                award = -0.1
+            
+            # cal N and Q and update table
+            if (self.iteration != 1):
+                self.N, self.Q = self.update_N_Q_table(N_table,Q_table,s_prime,award)
 
-        if (dead == True):
-            self.reset()
-            return utils.DOWN
+            if (dead == True):
+                self.reset()
+                return utils.DOWN
 
 
-        action_prime,explore = self.take_action(Q_table,N_table,s_prime)
-        # create new environment and state
-        # environment(snake_head_x,snake_head_y, body, food_x, food_y)
+        action_prime,explore = self.take_action(Q_table,N_table,s_prime,self._train)
+
         # update previous state and action
         self.s = s_prime
         self.a = action_prime
@@ -148,21 +139,21 @@ class Agent:
         return (x,y)
 
     def adjoining_wall(self,snake_head_axis):
-        num_block = utils.DISPLAY_SIZE/utils.GRID_SIZE
-        snake_head_x = snake_head_axis[0]/utils.GRID_SIZE
-        snake_head_y = snake_head_axis[1]/utils.GRID_SIZE
-        if (snake_head_x - 1 == 0):
+        snake_head_x = snake_head_axis[0]
+        snake_head_y = snake_head_axis[1]
+
+        if (snake_head_x - utils.GRID_SIZE == 0 and snake_head_x > 0):
             x = 1
-        elif (snake_head_x + 1 == num_block-1):
+        elif (snake_head_x + utils.GRID_SIZE == utils.DISPLAY_SIZE - utils.GRID_SIZE and snake_head_x < utils.DISPLAY_SIZE):
             x = 2
         else:
             x = 0
         
-        if (snake_head_y - 1 == 0):
+        if (snake_head_y - utils.GRID_SIZE == 0 and snake_head_y > 0):
             y = 1
-        elif(snake_head_y + 1 == num_block-1):
+        elif (snake_head_y + utils.GRID_SIZE == utils.DISPLAY_SIZE - utils.GRID_SIZE and snake_head_y < utils.DISPLAY_SIZE):
             y = 2
-        else: 
+        else:
             y = 0
         return (x,y)
 
@@ -176,13 +167,13 @@ class Agent:
                 element = snake_body[i]
                 x_body = element[0]
                 y_body = element[1]
-                if (y_body == y_head - grid_size):
+                if (y_body == y_head - grid_size and x_body == x_head):
                     adj_body_top = 1
-                if (y_body == y_head + grid_size):
+                if (y_body == y_head + grid_size and x_body == x_head):
                     adj_body_bot = 1
-                if (x_body == x_head - grid_size):
+                if (x_body == x_head - grid_size and y_body == y_head):
                     adj_body_left = 1
-                if (x_body == x_head + grid_size):
+                if (x_body == x_head + grid_size and y_body == y_head):
                     adj_body_right = 1
         return adj_body_top, adj_body_bot,adj_body_left,adj_body_right
 
