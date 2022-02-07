@@ -1,1 +1,1 @@
-# cs440-fa21-yf9
+# artificial-intelligence-project
