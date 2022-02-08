@@ -1,0 +1,7 @@
+python mp7.py --snake_head_x 200 --snake_head_y 200 --food_x 80 --food_y 80 --Ne 40 --C 40 --gamma 0.7
+python mp7.py --help
+python compare_tables.py --test 1 --checkpoint checkpoint.npy --checkpoint-n checkpoint_N.npy 
+
+[Test 1] snake_head_x=200, snake_head_y=200, food_x=80, food_y=80, Ne=40, C=40, gamma=0.7
+[Test 2] snake_head_x=200, snake_head_y=200, food_x=80, food_y=80, Ne=20, C=60, gamma=0.5
+[Test 3] snake_head_x=120, snake_head_y=120, food_x=320, food_y=320, Ne=30, C=30, gamma=0.6
