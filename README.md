@@ -1,2 +1,2 @@
 # artificial-intelligence-project
-Projects about different artificial intelligence concept.
+Below is the list of my projects on different perspectives of artificial intelligence.
