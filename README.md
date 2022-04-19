@@ -33,4 +33,22 @@ Running method:
 
 `python3 mp3.py`
 
+## 4. HMM POS tagging
 
+**Brief description**:
+
+This project implements part of speech (POS) tagging using an HMM model. My model ends up with 96.11% accuracy in test data.
+
+Running method:
+
+`python3 test_viterbi.py`
+
+## 5. Perceptron and kNN
+
+**Brief description**
+
+This project implements the perceptron and K-nearest neighbors algorithms to detect whether or not an image contains an animal or not.
+
+Running method:
+
+`python3 mp5.py -h`
