@@ -55,8 +55,16 @@ Running method:
 
 ## 6. Neural Nets
 
-This proeject uses Pytorch to generate multiple layers convolutional neural networks. The classifier divides images into four categories: ship, automobile, dog, or frog. My neural networks have the accuracy about 82.3% on image classification.
+This project uses Pytorch to generate multiple layers convolutional neural networks. The classifier divides images into four categories: ship, automobile, dog, or frog. My neural networks have the accuracy about 82.3% on image classification.
 
 Running method:
 
 `python3 mp6.py -h`
+
+## 7. Reinforcement Learning - Snake Game
+
+This project trains the agent in snake game using Q-learning. The snake needs to eat food in a 11x11 game map. However, the snake could not hit its body. My Q-learning strategy using reinforcement learning could eat 23 food on average without knowing where the food is generated.
+
+Running method:
+
+`python mp7.py --human`
