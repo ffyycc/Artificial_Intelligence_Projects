@@ -63,7 +63,7 @@ Running method:
 
 ## 7. Reinforcement Learning - Snake Game
 
-This project trains the agent in snake game using Q-learning. The snake needs to eat food in a 11x11 game map. However, the snake could not hit its body. My Q-learning strategy using reinforcement learning could eat 23 food on average without knowing where the food is generated.
+This project trains the agent in snake game using Q-learning. The snake needs to eat food on an 11x11 game map. However, the snake could not hit its body. My Q-learning strategy using reinforcement learning could eat 23 food on average without knowing where the food is generated.
 
 Running method:
 
