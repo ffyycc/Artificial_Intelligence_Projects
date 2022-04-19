@@ -3,7 +3,7 @@ Below is the list of my projects on different perspectives of artificial intelli
 ## 1. Search 
 
 **Brief description:
-Use BFS, A*, and greedy algorithms to solve 'pacman'-like maze puzzles **
+Use BFS, A*, and greedy algorithms to solve 'pacman'-like maze puzzles**
 
 Running method:
 
