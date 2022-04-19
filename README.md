@@ -1,4 +1,4 @@
-# artificial-intelligence-project
+# Artificial Intelligence Project
 Below is the list of my projects on different perspectives of artificial intelligence.
 ## 1. Search 
 
@@ -52,3 +52,11 @@ This project implements the perceptron and K-nearest neighbors algorithms to det
 Running method:
 
 `python3 mp5.py -h`
+
+## 6. Neural Nets
+
+This proeject uses Pytorch to generate multiple layers convolutional neural networks. The classifier divides images into four categories: ship, automobile, dog, or frog. My neural networks have the accuracy about 82.3% on image classification.
+
+Running method:
+
+`python3 mp6.py -h`
