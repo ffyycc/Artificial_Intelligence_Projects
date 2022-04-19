@@ -17,9 +17,20 @@ Ex:
 
 ## 2. Robotics
 
-Brief description:
+**Brief description**:
 The project transforms a shapeshifting alien path planning problem into a configuration space <horizontal, vertical, and ball shape>, and then search for a path in that space.
 
 Running method:
 
 `python3 geometry.py`
+
+## 3. Naive Bayes
+
+**Brief description**:
+The proect uses Naive Bayes algorithm to train a binary sentiment classifier with a dataset of movie reviews. The output model could evaluate whether the IMDb comments are positive or negative.
+
+Running method:
+
+`python3 mp3.py`
+
+
